@@ -3,6 +3,7 @@ import SwiftUI
 struct MainView: View {
     @Environment(AppRouter.self) var router
     @State private var showComingSoon = false
+    @State private var showGuide = false
 
     var body: some View {
         ZStack {
@@ -44,6 +45,45 @@ struct MainView: View {
         .overlay {
             if showComingSoon {
                 ComingSoonOverlay { showComingSoon = false }
+            }
+        }
+        .overlay {
+            if showGuide {
+                MainGuideOverlay()
+                    .transition(.opacity)
+            }
+        }
+        .onAppear {
+            showGuide = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                withAnimation(.easeOut(duration: 0.4)) {
+                    showGuide = false
+                }
+            }
+        }
+    }
+}
+
+struct MainGuideOverlay: View {
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+
+            ZStack {
+                Color.black.opacity(0.6)
+                    .ignoresSafeArea()
+
+                VStack(spacing: 10) {
+                    Text("Click to add your widget!")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+
+                    Image(systemName: "arrow.down")
+                        .font(.system(size: 20, weight: .light))
+                        .foregroundStyle(.white)
+                }
+                .position(x: w * 0.557, y: h * 0.315)
             }
         }
     }
@@ -88,6 +128,13 @@ struct ComingSoonOverlay: View {
 #Preview {
     MainView()
         .environment(AppRouter())
+}
+
+#Preview("Main Guide Overlay") {
+    ZStack {
+        Color.bgBase.ignoresSafeArea()
+        MainGuideOverlay()
+    }
 }
 
 #Preview("Coming Soon") {
