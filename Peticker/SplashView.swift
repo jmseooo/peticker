@@ -32,6 +32,9 @@ struct SplashView: View {
             }
         }
         .task {
+            #if DEBUG
+            UserDefaults.standard.removeObject(forKey: "hasSeenOnboarding")
+            #endif
             // 로고 상태 1초 유지
             try? await Task.sleep(for: .milliseconds(1000))
             // 흩어짐

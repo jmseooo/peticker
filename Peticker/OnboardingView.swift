@@ -1,4 +1,5 @@
 import SwiftUI
+import Photos
 
 struct OnboardingView: View {
     @Environment(AppRouter.self) var router
@@ -38,8 +39,12 @@ struct OnboardingView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Button {
-                UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
-                router.navigateTo(.main)
+                PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in
+                    Task { @MainActor in
+                        UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
+                        router.navigateTo(.main)
+                    }
+                }
             } label: {
                 Text("Get Started")
                     .font(.petickerButton)
