@@ -1,9 +1,11 @@
 import SwiftUI
+import PhotosUI
 
 struct MainView: View {
     @Environment(AppRouter.self) var router
     @State private var showComingSoon = false
     @State private var showGuide = false
+    @State private var selectedItem: PhotosPickerItem?
 
     var body: some View {
         ZStack {
@@ -40,17 +42,20 @@ struct MainView: View {
                         .transition(.opacity)
                 }
 
-                // 청록 추가 원 — 딤 위
-                Circle()
-                    .fill(Color.brandCyan)
-                    .frame(width: w * 0.72)
-                    .overlay {
-                        Image("PlusIcon")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 110, height: 110)
-                    }
-                    .position(x: w * 0.540, y: h * 0.524)
+                // 청록 추가 버튼 — 딤 위
+                PhotosPicker(selection: $selectedItem, matching: .images) {
+                    Circle()
+                        .fill(Color.brandCyan)
+                        .frame(width: w * 0.72)
+                        .overlay {
+                            Image("PlusIcon")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 110, height: 110)
+                        }
+                }
+                .buttonStyle(.plain)
+                .position(x: w * 0.540, y: h * 0.524)
 
                 // 가이드 텍스트·화살표 — 청록 원 위
                 if showGuide {
