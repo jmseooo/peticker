@@ -84,13 +84,10 @@ struct MakePetickerView: View {
 
     private var backButton: some View {
         Button(action: onClose) {
-            Image("ArrowUp")
+            Image("BackButton")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 18, height: 18)
-                .rotationEffect(.degrees(-90))   // 위 화살표를 왼쪽으로
-                .frame(width: 29, height: 29)
-                .background(Color.brandLime)
+                .frame(width: 29, height: 29)   // 라임 배경·좌향 화살표가 에셋에 포함
         }
         .buttonStyle(.plain)
     }
