@@ -13,44 +13,55 @@ struct MainView: View {
                 let w = geo.size.width
                 let h = geo.size.height
 
-                // Peticker 로고 — 상단 중앙
-                Image("PetickerLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 38)
-                    .position(x: w / 2, y: 30)
+                // 딤 아래 요소
+                Group {
+                    // Peticker 로고 — 상단 중앙
+                    Image("PetickerLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 38)
+                        .position(x: w / 2, y: 30)
 
-                // 핑크 잠금 슬롯 — 좌상단
-                LockedSlot(size: 149, color: .brandPink)
-                    .position(x: w * 0.242, y: h * 0.228)
-                    .onTapGesture { showComingSoon = true }
+                    // 핑크 잠금 슬롯 — 좌상단
+                    LockedSlot(size: 149, color: .brandPink)
+                        .position(x: w * 0.242, y: h * 0.228)
+                        .onTapGesture { showComingSoon = true }
 
-                // 청록 추가 원 — 중앙 우측
+                    // 라임 잠금 슬롯 — 좌하단
+                    LockedSlot(size: 105, color: .brandLime)
+                        .position(x: w * 0.340, y: h * 0.843)
+                        .onTapGesture { showComingSoon = true }
+                }
+
+                // 딤 레이어 — 잠금 슬롯 위, 청록 원 아래 (Figma 55:1376)
+                if showGuide {
+                    Color.black.opacity(0.6)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                }
+
+                // 청록 추가 원 — 딤 위
                 Circle()
                     .fill(Color.brandCyan)
                     .frame(width: w * 0.72)
                     .overlay {
-                        Image(systemName: "plus")
-                            .font(.system(size: 52, weight: .ultraLight))
-                            .foregroundStyle(Color.black)
+                        Image("PlusIcon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 110, height: 110)
                     }
                     .position(x: w * 0.540, y: h * 0.524)
 
-                // 라임 잠금 슬롯 — 좌하단
-                LockedSlot(size: 105, color: .brandLime)
-                    .position(x: w * 0.340, y: h * 0.843)
-                    .onTapGesture { showComingSoon = true }
+                // 가이드 텍스트·화살표 — 청록 원 위
+                if showGuide {
+                    MainGuideOverlay()
+                        .transition(.opacity)
+                }
             }
         }
         .overlay {
             if showComingSoon {
                 ComingSoonOverlay { showComingSoon = false }
-            }
-        }
-        .overlay {
-            if showGuide {
-                MainGuideOverlay()
-                    .transition(.opacity)
             }
         }
         .onAppear {
@@ -64,30 +75,6 @@ struct MainView: View {
     }
 }
 
-struct MainGuideOverlay: View {
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
-
-            ZStack {
-                Color.black.opacity(0.6)
-                    .ignoresSafeArea()
-
-                VStack(spacing: 10) {
-                    Text("Click to add your widget!")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
-
-                    Image(systemName: "arrow.down")
-                        .font(.system(size: 20, weight: .light))
-                        .foregroundStyle(.white)
-                }
-                .position(x: w * 0.557, y: h * 0.315)
-            }
-        }
-    }
-}
 
 struct LockedSlot: View {
     let size: CGFloat
@@ -130,12 +117,6 @@ struct ComingSoonOverlay: View {
         .environment(AppRouter())
 }
 
-#Preview("Main Guide Overlay") {
-    ZStack {
-        Color.bgBase.ignoresSafeArea()
-        MainGuideOverlay()
-    }
-}
 
 #Preview("Coming Soon") {
     ComingSoonOverlay {}
