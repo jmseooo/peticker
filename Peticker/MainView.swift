@@ -8,32 +8,37 @@ struct MainView: View {
         ZStack {
             Color.bgBase.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                PetickerLogo(size: 30, spacing: 5)
-                    .padding(.top, 64)
+            GeometryReader { geo in
+                let w = geo.size.width
+                let h = geo.size.height
 
-                Spacer()
+                // Peticker 로고 — 상단 중앙
+                Image("PetickerLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 38)
+                    .position(x: w / 2, y: 30)
 
-                LockedSlot(color: .brandPink)
+                // 핑크 잠금 슬롯 — 좌상단
+                LockedSlot(size: 149, color: .brandPink)
+                    .position(x: w * 0.242, y: h * 0.228)
                     .onTapGesture { showComingSoon = true }
 
-                Spacer()
-
+                // 청록 추가 원 — 중앙 우측
                 Circle()
                     .fill(Color.brandCyan)
-                    .frame(width: 220, height: 220)
+                    .frame(width: w * 0.72)
                     .overlay {
                         Image(systemName: "plus")
                             .font(.system(size: 52, weight: .ultraLight))
-                            .foregroundStyle(Color.white)
+                            .foregroundStyle(Color.black)
                     }
+                    .position(x: w * 0.540, y: h * 0.524)
 
-                Spacer()
-
-                LockedSlot(color: .brandLime)
+                // 라임 잠금 슬롯 — 좌하단
+                LockedSlot(size: 105, color: .brandLime)
+                    .position(x: w * 0.340, y: h * 0.843)
                     .onTapGesture { showComingSoon = true }
-
-                Spacer()
             }
         }
         .overlay {
@@ -45,6 +50,7 @@ struct MainView: View {
 }
 
 struct LockedSlot: View {
+    let size: CGFloat
     let color: Color
 
     var body: some View {
@@ -52,9 +58,9 @@ struct LockedSlot: View {
             Circle()
                 .strokeBorder(style: StrokeStyle(lineWidth: 2.5, dash: [6, 4]))
                 .foregroundStyle(color)
-                .frame(width: 80, height: 80)
+                .frame(width: size, height: size)
             Image(systemName: "lock.fill")
-                .font(.system(size: 22))
+                .font(.system(size: size * 0.2))
                 .foregroundStyle(color)
         }
     }
@@ -90,8 +96,8 @@ struct ComingSoonOverlay: View {
 
 #Preview("Locked Slot") {
     HStack(spacing: 40) {
-        LockedSlot(color: .brandPink)
-        LockedSlot(color: .brandLime)
+        LockedSlot(size: 149, color: .brandPink)
+        LockedSlot(size: 105, color: .brandLime)
     }
     .padding()
     .background(Color.bgBase)
