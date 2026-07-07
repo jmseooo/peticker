@@ -1,8 +1,8 @@
 import SwiftUI
 
 let petickerLetters: [(String, Color)] = [
-    ("p", .brandPink), ("e", .brandCyan), ("t", .brandYellow), ("i", .brandLime),
-    ("c", .brandPink), ("k", .brandCyan), ("e", .brandYellow), ("r", .brandLime)
+    ("P", .brandPink), ("e", .brandYellow), ("t", .brandCyan), ("i", .brandOrange),
+    ("c", .brandLime),  ("k", .brandPink),  ("e", .brandYellow), ("r", .brandCyan)
 ]
 
 struct PetickerLogo: View {
