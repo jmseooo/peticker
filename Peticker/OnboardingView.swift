@@ -2,73 +2,96 @@ import SwiftUI
 
 struct OnboardingView: View {
     @Environment(AppRouter.self) var router
-    @State private var page = 0
 
     var body: some View {
         ZStack {
             Color.bgBase.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                PetickerLogo(size: 32, spacing: 6)
-                    .padding(.top, 64)
-                    .padding(.bottom, 36)
-
-                TabView(selection: $page) {
-                    onboardingCard(
-                        icon: "iphone",
-                        title: "Add widgets to\nyour background."
-                    )
-                    .tag(0)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    Image("PetickerLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 44)
+                        .padding(.top, 35)
+                        .padding(.bottom, 16)
 
                     onboardingCard(
-                        icon: "lock.rectangle.stack",
-                        title: "Create widgets for\nyour lock screen."
-                    )
-                    .tag(1)
-                }
-                .tabViewStyle(.page(indexDisplayMode: .always))
-
-                Button {
-                    if page == 0 {
-                        withAnimation { page = 1 }
-                    } else {
-                        UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
-                        router.navigateTo(.main)
+                        title: "Add widgets to your background.",
+                        color: Color(hex: "C6F3FF")
+                    ) {
+                        HomeScreenMockup()
                     }
-                } label: {
-                    Text(page == 0 ? "Next" : "Get Started")
-                        .font(.petickerButton)
-                        .foregroundStyle(Color.black)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                        .background(Color.brandLime, in: RoundedRectangle(cornerRadius: 18))
+                    .padding(.horizontal, 22)
+
+                    onboardingCard(
+                        title: "Create widgets for your lock screen.",
+                        color: Color(hex: "E1FF91")
+                    ) {
+                        LockScreenMockup()
+                    }
+                    .padding(.horizontal, 22)
+                    .padding(.top, 26)
                 }
-                .padding(.horizontal, 28)
-                .padding(.bottom, 52)
-                .animation(.easeInOut, value: page)
+                .padding(.bottom, 8)
             }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Button {
+                UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
+                router.navigateTo(.main)
+            } label: {
+                Text("Get Started")
+                    .font(.petickerButton)
+                    .foregroundStyle(Color.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Color.brandLime, in: RoundedRectangle(cornerRadius: 18))
+            }
+            .padding(.horizontal, 28)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            .background(Color.bgBase)
         }
     }
 
     @ViewBuilder
-    private func onboardingCard(icon: String, title: String) -> some View {
-        RoundedRectangle(cornerRadius: 28)
-            .fill(Color.white)
-            .frame(width: 260, height: 360)
-            .shadow(color: .black.opacity(0.08), radius: 24, x: 0, y: 8)
-            .overlay {
-                VStack(spacing: 20) {
-                    Image(systemName: icon)
-                        .font(.system(size: 64))
-                        .foregroundStyle(Color.brandCyan)
-                    Text(title)
-                        .font(.system(size: 18, weight: .semibold))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(Color.black)
-                }
-                .padding(24)
-            }
-            .padding(.horizontal, 40)
+    private func onboardingCard<M: View>(
+        title: String,
+        color: Color,
+        @ViewBuilder content: () -> M
+    ) -> some View {
+        VStack(spacing: 0) {
+            Text(title)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Color.black)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, minHeight: 74)
+
+            content()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(color)
+        }
+        .padding(.horizontal, 24)
+        .frame(height: 288)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 30))
+    }
+}
+
+private struct HomeScreenMockup: View {
+    var body: some View {
+        Image("OnboardingHome")
+            .resizable()
+            .scaledToFit()
+    }
+}
+
+private struct LockScreenMockup: View {
+    var body: some View {
+        Image("OnboardingLock")
+            .resizable()
+            .scaledToFit()
     }
 }
 
