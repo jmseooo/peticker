@@ -17,6 +17,7 @@
 		BB0001000000000000000006 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000006 /* OnboardingView.swift */; };
 		BB0001000000000000000007 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000007 /* MainView.swift */; };
 		BB0001000000000000000008 /* MainGuideOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000008 /* MainGuideOverlay.swift */; };
+		BB0001000000000000000009 /* BackgroundRemover.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000009 /* BackgroundRemover.swift */; };
 		E1456F25C4C649CC8EFDA39E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60F0B9821E74022B5D71E80 /* ContentView.swift */; };
 		F89C5345866D4AD7AC44AE59 /* PetickerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08F6380E9CE347968D28092B /* PetickerApp.swift */; };
 /* End PBXBuildFile section */
@@ -35,6 +36,7 @@
 		AA0001000000000000000006 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		AA0001000000000000000007 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		AA0001000000000000000008 /* MainGuideOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainGuideOverlay.swift; sourceTree = "<group>"; };
+		AA0001000000000000000009 /* BackgroundRemover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRemover.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +87,7 @@
 				AA0001000000000000000006 /* OnboardingView.swift */,
 				AA0001000000000000000007 /* MainView.swift */,
 				AA0001000000000000000008 /* MainGuideOverlay.swift */,
+				AA0001000000000000000009 /* BackgroundRemover.swift */,
 				957FCB1BE3ED4B00913C6D7A /* Assets.xcassets */,
 				301F284A657D475F94E96A56 /* Preview Content */,
 			);
@@ -171,6 +174,7 @@
 				BB0001000000000000000006 /* OnboardingView.swift in Sources */,
 				BB0001000000000000000007 /* MainView.swift in Sources */,
 				BB0001000000000000000008 /* MainGuideOverlay.swift in Sources */,
+				BB0001000000000000000009 /* BackgroundRemover.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
