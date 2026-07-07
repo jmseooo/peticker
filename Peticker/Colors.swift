@@ -5,7 +5,7 @@ extension Color {
     static let brandYellow = Color(hex: "F5E63D")
     static let brandCyan   = Color(hex: "3DD6F5")
     static let brandOrange = Color(hex: "FF6B35")
-    static let brandLime   = Color(hex: "C6F53D")
+    static let brandLime   = Color(hex: "CAFF39")
     static let bgBase      = Color(hex: "F5F5F5")
 }
 

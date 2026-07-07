@@ -210,8 +210,11 @@ struct MakePetickerView: View {
                 }
                 .overlay {
                     if isSelected {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: size * 0.36, weight: .bold))
+                        Image("CheckIcon")
+                            .renderingMode(.template)   // 스와치 색에 따라 검정/흰색 틴트
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: size * 0.5, height: size * 0.5)
                             .foregroundStyle(swatch.checkColor)
                     }
                 }
