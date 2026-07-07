@@ -6,8 +6,8 @@ struct MainView: View {
     @State private var showComingSoon = false
     @State private var showGuide = false
     @State private var selectedItem: PhotosPickerItem?
-    @State private var selectedImage: UIImage?
-    @State private var isProcessing = false
+    @State private var pickedPhoto: PickedPhoto?
+    @State private var isLoadingPhoto = false
 
     var body: some View {
         ZStack {
@@ -71,30 +71,22 @@ struct MainView: View {
                 ComingSoonOverlay { showComingSoon = false }
             }
         }
-        .overlay {
-            if let selectedImage {
-                PhotoPreviewOverlay(image: selectedImage) {
-                    self.selectedImage = nil
-                    self.selectedItem = nil
-                }
-            } else if isProcessing {
-                ProcessingOverlay()
+        .fullScreenCover(item: $pickedPhoto) { photo in
+            MakePetickerView(originalImage: photo.image) {
+                pickedPhoto = nil
+                selectedItem = nil
             }
         }
         .onChange(of: selectedItem) { _, newItem in
             guard let newItem else { return }
-            isProcessing = true
+            isLoadingPhoto = true
             Task {
+                // 원본 사진만 불러오고, 누끼·스트로크는 제작 화면에서 처리
+                defer { Task { @MainActor in isLoadingPhoto = false } }
                 guard let data = try? await newItem.loadTransferable(type: Data.self),
-                      let uiImage = UIImage(data: data) else {
-                    await MainActor.run { isProcessing = false }
-                    return
-                }
-                // 배경 제거(누끼) 실행. 실패하면 원본을 그대로 보여줌.
-                let cutout = await BackgroundRemover.removeBackground(from: uiImage)
+                      let uiImage = UIImage(data: data) else { return }
                 await MainActor.run {
-                    selectedImage = cutout ?? uiImage
-                    isProcessing = false
+                    pickedPhoto = PickedPhoto(image: uiImage)
                 }
             }
         }
@@ -124,60 +116,6 @@ struct LockedSlot: View {
                 .font(.system(size: size * 0.2))
                 .foregroundStyle(color)
         }
-    }
-}
-
-// 누끼 처리 중 로딩 표시
-struct ProcessingOverlay: View {
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.85)
-                .ignoresSafeArea()
-
-            VStack(spacing: 16) {
-                ProgressView()
-                    .controlSize(.large)
-                    .tint(.white)
-                Text("배경 지우는 중…")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(Color.white)
-            }
-        }
-        .transition(.opacity)
-    }
-}
-
-// 2단계 — 누끼(배경 제거) 결과 미리보기
-struct PhotoPreviewOverlay: View {
-    let image: UIImage
-    let onDismiss: () -> Void
-
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.85)
-                .ignoresSafeArea()
-
-            VStack(spacing: 20) {
-                // 배경이 투명하게 지워졌으면 어두운 배경 위에 피사체만 떠 보임
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .padding(.horizontal, 24)
-
-                Button {
-                    onDismiss()
-                } label: {
-                    Text("닫기")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.black)
-                        .padding(.horizontal, 32)
-                        .padding(.vertical, 14)
-                        .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
-                }
-            }
-            .padding(.vertical, 40)
-        }
-        .transition(.opacity)
     }
 }
 
