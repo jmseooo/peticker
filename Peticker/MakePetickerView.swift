@@ -162,6 +162,9 @@ struct MakePetickerView: View {
                 Text("DONE")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.black)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 14)
+                    .contentShape(Rectangle())
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
