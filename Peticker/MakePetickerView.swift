@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 // 사진 선택 후 제작 화면으로 넘겨줄 원본 이미지 래퍼
 struct PickedPhoto: Identifiable {
@@ -31,13 +32,20 @@ enum StrokeColor: CaseIterable, Identifiable {
 
 // 4단계 — 제작 화면: 누끼·스트로크 처리(Processing) → 완성 후 테두리 색 선택
 struct MakePetickerView: View {
-    let originalImage: UIImage
     let onClose: () -> Void
 
+    @State private var currentImage: UIImage         // 현재 처리 대상 원본(사진 변경 시 교체)
     @State private var cutout: UIImage?              // 누끼 결과(테두리 없음)
     @State private var sticker: UIImage?             // 현재 색 테두리 적용 결과
     @State private var selectedColor: StrokeColor = .cyan
     @State private var isProcessing = true
+    @State private var showChangeButton = false      // 원 탭 시 딤 + Change 버튼 표시
+    @State private var pickerItem: PhotosPickerItem? // 사진 다시 고르기
+
+    init(originalImage: UIImage, onClose: @escaping () -> Void) {
+        _currentImage = State(initialValue: originalImage)
+        self.onClose = onClose
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -55,9 +63,28 @@ struct MakePetickerView: View {
         // 배경은 background로 분리 — 안전영역만 넘어가고 레이아웃(상단 바 위치)엔 영향 없음
         .background(Color.bgBase.ignoresSafeArea())
         .task {
-            // 누끼 실행 후 기본 색(cyan) 테두리 적용
-            cutout = await BackgroundRemover.removeBackground(from: originalImage)
-            await restroke()
+            await processImage()
+        }
+        .onChange(of: pickerItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                guard let data = try? await newItem.loadTransferable(type: Data.self),
+                      let uiImage = UIImage(data: data) else { return }
+                await MainActor.run {
+                    currentImage = uiImage
+                    showChangeButton = false
+                    withAnimation(.easeOut(duration: 0.2)) { isProcessing = true }
+                }
+                await processImage()
+            }
+        }
+    }
+
+    // 현재 원본으로 누끼 → 선택 색 테두리 적용 (첫 진입·사진 변경 시 공통)
+    private func processImage() async {
+        cutout = await BackgroundRemover.removeBackground(from: currentImage)
+        await restroke()
+        await MainActor.run {
             withAnimation(.easeOut(duration: 0.3)) { isProcessing = false }
         }
     }
@@ -146,7 +173,7 @@ struct MakePetickerView: View {
     private func widgetPreview(diameter d: CGFloat) -> some View {
         ZStack {
             Circle()
-                .fill(.white)
+                .fill(showChangeButton ? Color(white: 0.55) : .white)
                 .frame(width: d, height: d)
 
             // 스티커 — 중앙보다 살짝 아래
@@ -154,19 +181,54 @@ struct MakePetickerView: View {
                 .frame(width: d * 0.76, height: d * 0.76)
                 .offset(y: d * 0.04)
 
-            // 배터리 + 100% — 원 상단 근처
-            VStack(spacing: 0) {
-                HStack(spacing: 5) {
-                    Image(systemName: "battery.100")
-                        .font(.system(size: 15))
-                    Text("100%")
-                        .font(.system(size: 15, weight: .bold))
+            // 배터리 + 100% — 원 상단 근처 (변경 모드에선 숨김)
+            if !showChangeButton {
+                VStack(spacing: 0) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "battery.100")
+                            .font(.system(size: 15))
+                        Text("100%")
+                            .font(.system(size: 15, weight: .bold))
+                    }
+                    .foregroundStyle(.black)
+                    .padding(.top, d * 0.14)
+                    Spacer()
                 }
-                .foregroundStyle(.black)
-                .padding(.top, d * 0.14)
-                Spacer()
+                .frame(width: d, height: d)
             }
-            .frame(width: d, height: d)
+
+            // 딤 + Change 버튼 — 원을 탭하면 표시
+            if showChangeButton {
+                changeOverlay(diameter: d)
+            }
+        }
+        .frame(width: d, height: d)
+        .contentShape(Circle())
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.2)) { showChangeButton.toggle() }
+        }
+    }
+
+    // 원 위 딤 처리 + 사진 다시 고르기 버튼
+    private func changeOverlay(diameter d: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .fill(Color.black.opacity(0.15))
+                .frame(width: d, height: d)
+
+            PhotosPicker(selection: $pickerItem, matching: .images) {
+                VStack(spacing: 8) {
+                    Text("Change")
+                        .font(.system(size: 20, weight: .bold))
+                    Image("ChangeIcon")
+                        .renderingMode(.template)   // 흰색 픽셀 아이콘 틴트
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                }
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -176,7 +238,7 @@ struct MakePetickerView: View {
                 Image(uiImage: sticker).resizable().scaledToFit()
             } else {
                 // 누끼 실패 시 원본 표시
-                Image(uiImage: originalImage).resizable().scaledToFit()
+                Image(uiImage: currentImage).resizable().scaledToFit()
             }
         }
     }
