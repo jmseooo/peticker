@@ -18,20 +18,27 @@ enum StickerStyler {
             let extent = input.extent
             // 테두리 두께: 이미지 긴 변 기준 비율, 최소 6pt
             let radius = max(6, max(extent.width, extent.height) * widthRatio)
+            let blurRadius = radius * 0.35
+
+            // 피사체가 이미지 경계에 붙어 잘려있어도 그 변에 테두리가 그려지도록
+            // 캔버스를 테두리 두께(+블러 여유)만큼 넓힘. 넓힌 영역은 투명.
+            let pad = ceil(radius + blurRadius * 3)
+            let paddedExtent = extent.insetBy(dx: -pad, dy: -pad)
 
             // 1. 피사체 실루엣을 바깥으로 팽창 (테두리 두께만큼)
+            //    clampedToExtent를 쓰지 않아 경계 바깥을 투명으로 둠 → 잘린 변에서도
+            //    경계의 불투명 픽셀이 바깥(투명 여백)으로 번져 테두리가 생김.
             let dilated = input
-                .clampedToExtent()
                 .applyingFilter("CIMorphologyMaximum", parameters: [kCIInputRadiusKey: radius])
-                .cropped(to: extent)
+                .cropped(to: paddedExtent)
 
             // 1-2. 팽창된 실루엣의 가장자리를 매끄럽게 다듬음
             //      살짝 블러로 계단(각짐)을 없앤 뒤, alpha를 적당히 증폭해
             //      선명함은 유지하되 곡선은 부드럽게
             let hardened = dilated
                 .clampedToExtent()
-                .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: radius * 0.35])
-                .cropped(to: extent)
+                .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: blurRadius])
+                .cropped(to: paddedExtent)
                 .applyingFilter("CIColorMatrix", parameters: [
                     "inputAVector": CIVector(x: 0, y: 0, z: 0, w: 4)
                 ])
@@ -52,7 +59,7 @@ enum StickerStyler {
             let output = input.composited(over: colored)
 
             let context = CIContext()
-            guard let cg = context.createCGImage(output, from: extent) else { return nil }
+            guard let cg = context.createCGImage(output, from: paddedExtent) else { return nil }
             return UIImage(cgImage: cg)
         }.value
     }
