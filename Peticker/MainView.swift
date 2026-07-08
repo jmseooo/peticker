@@ -47,17 +47,29 @@ struct MainView: View {
 
                 // 청록 추가 버튼 — 딤 위
                 PhotosPicker(selection: $selectedItem, matching: .images) {
+                    let diameter = w * 0.72
                     Circle()
-                        .fill(Color.brandCyan)
-                        .frame(width: w * 0.72)
+                        // 완성 스티커가 있으면 흰 원(위젯과 동일), 없으면 청록 추가 버튼
+                        .fill(savedSticker == nil ? Color.brandCyan : Color.white)
+                        .frame(width: diameter)
                         .overlay {
                             if let savedSticker {
-                                // 완성된 스티커 표시 — 원 안에 맞춰 배치(탭하면 새로 만들기)
-                                Image(uiImage: savedSticker)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .padding(w * 0.72 * 0.1)
-                                    .clipShape(Circle())
+                                // 완성 상태 — 배터리 100% + 스티커(위젯 미리보기와 동일 구성)
+                                VStack(spacing: 0) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "battery.100")
+                                            .font(.system(size: 16))
+                                        Text("100%")
+                                            .font(.system(size: 16, weight: .bold))
+                                    }
+                                    .foregroundStyle(.primary)
+                                    .padding(.top, diameter * 0.18)
+                                    Image(uiImage: savedSticker)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .padding(.horizontal, diameter * 0.12)
+                                        .padding(.bottom, diameter * 0.06)
+                                }
                             } else {
                                 Image("PlusIcon")
                                     .resizable()
