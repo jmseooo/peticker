@@ -63,6 +63,8 @@ struct PetickerWidgetEntryView: View {
                     .padding(.top, geo.size.height * 0.12)
                 }
             }
+            // GeometryReader는 자식을 좌상단에 두므로, 위젯 전체를 채워 중앙 정렬되게 함
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         // 투명 배경 — 홈 화면 배경이 그대로 비침
         .containerBackground(.clear, for: .widget)
