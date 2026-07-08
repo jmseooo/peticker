@@ -174,15 +174,22 @@ struct MakePetickerView: View {
 
     // 홈 화면 위젯처럼 보이는 흰 원 + 스티커
     private func widgetPreview(diameter d: CGFloat) -> some View {
-        ZStack {
+        // 사진 배치 안전 영역: 상단 배터리 영역을 침범하지 않도록
+        // 세로로 긴 사진도 이 상단선(safeTop) 아래에서만 시작하도록 고정한다.
+        let safeTop: CGFloat = d * 0.24      // 배터리 아래 여백 확보
+        let safeBottom: CGFloat = d * 0.90
+        let photoHeight = safeBottom - safeTop
+        let photoOffsetY = (safeTop + safeBottom) / 2 - d / 2   // 안전 영역 중앙으로 이동
+
+        return ZStack {
             Circle()
                 .fill(showChangeButton ? Color(white: 0.55) : .white)
                 .frame(width: d, height: d)
 
-            // 스티커 — 중앙보다 살짝 아래
+            // 스티커 — 배터리 아래 안전 영역에 배치
             stickerImage
-                .frame(width: d * 0.76, height: d * 0.76)
-                .offset(y: d * 0.04)
+                .frame(width: d * 0.76, height: photoHeight)
+                .offset(y: photoOffsetY)
 
             // 배터리 + 100% — 원 상단 근처 (변경 모드에선 숨김)
             if !showChangeButton {
