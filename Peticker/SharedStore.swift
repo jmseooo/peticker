@@ -38,4 +38,10 @@ enum SharedStore {
         guard let url = stickerURL else { return nil }
         return try? Data(contentsOf: url)
     }
+
+    /// 저장된 스티커를 UIImage로 읽어 반환 (앱 메인 화면에서 사용). 없으면 nil.
+    static func loadSticker() -> UIImage? {
+        guard let data = stickerData() else { return nil }
+        return UIImage(data: data)
+    }
 }

@@ -8,6 +8,7 @@ struct MainView: View {
     @State private var selectedItem: PhotosPickerItem?
     @State private var pickedPhoto: PickedPhoto?
     @State private var isLoadingPhoto = false
+    @State private var savedSticker: UIImage?   // 완성 후 청록 원에 표시할 스티커(위젯과 동일 결과)
 
     var body: some View {
         ZStack {
@@ -50,10 +51,19 @@ struct MainView: View {
                         .fill(Color.brandCyan)
                         .frame(width: w * 0.72)
                         .overlay {
-                            Image("PlusIcon")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 110, height: 110)
+                            if let savedSticker {
+                                // 완성된 스티커 표시 — 원 안에 맞춰 배치(탭하면 새로 만들기)
+                                Image(uiImage: savedSticker)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .padding(w * 0.72 * 0.1)
+                                    .clipShape(Circle())
+                            } else {
+                                Image("PlusIcon")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 110, height: 110)
+                            }
                         }
                 }
                 .buttonStyle(.plain)
@@ -75,6 +85,7 @@ struct MainView: View {
             MakePetickerView(originalImage: photo.image) {
                 pickedPhoto = nil
                 selectedItem = nil
+                savedSticker = SharedStore.loadSticker()   // 완성 결과를 청록 원에 반영
             }
         }
         .onChange(of: selectedItem) { _, newItem in
@@ -91,6 +102,7 @@ struct MainView: View {
             }
         }
         .onAppear {
+            savedSticker = SharedStore.loadSticker()   // 이전에 만든 스티커가 있으면 청록 원에 표시
             showGuide = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 withAnimation(.easeOut(duration: 0.4)) {
