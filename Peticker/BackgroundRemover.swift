@@ -23,10 +23,13 @@ enum BackgroundRemover {
                 guard let result = request.results?.first else { return nil }
 
                 // 인식된 모든 피사체를 합쳐 배경 투명 이미지 생성
+                // croppedToInstancesExtent: true → 피사체 바운딩박스에 딱 맞게 잘라냄.
+                // 원본 캔버스 크기를 유지하면 피사체가 사진 속 위치·크기 그대로 남아
+                // 원 안에서 치우치고 작게 보이므로, 여기서 타이트하게 크롭해 중앙·꽉참을 보장.
                 let maskedBuffer = try result.generateMaskedImage(
                     ofInstances: result.allInstances,
                     from: handler,
-                    croppedToInstancesExtent: false
+                    croppedToInstancesExtent: true
                 )
 
                 let ciImage = CIImage(cvPixelBuffer: maskedBuffer)
