@@ -3,4 +3,5 @@ xcuserdata/
 *.xcuserstate
 DerivedData/
 .build/
+build/
 *.resolved

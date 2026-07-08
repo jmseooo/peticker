@@ -1,25 +1,25 @@
 import WidgetKit
 import SwiftUI
 
-// 위젯 한 칸에 담기는 데이터 — 저장된 스티커 PNG (Data는 Sendable이라 동시성 안전)
+// 위젯 한 칸에 담기는 데이터 — 다운샘플링된 작은 스티커 PNG (Data는 Sendable)
 struct StickerEntry: TimelineEntry {
     let date: Date
     let imageData: Data?
 }
 
-// 공유 저장소에서 스티커를 읽어 타임라인을 구성
+// 공유 저장소에서 스티커를 (메모리 안전하게) 읽어 타임라인을 구성
 struct StickerProvider: TimelineProvider {
     func placeholder(in context: Context) -> StickerEntry {
-        StickerEntry(date: Date(), imageData: SharedStore.stickerData())
+        StickerEntry(date: Date(), imageData: nil)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (StickerEntry) -> Void) {
-        completion(StickerEntry(date: Date(), imageData: SharedStore.stickerData()))
+        completion(StickerEntry(date: Date(), imageData: SharedStore.widgetImageData()))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<StickerEntry>) -> Void) {
-        // 스티커는 앱에서 저장할 때만 바뀌므로 자동 새로고침(.never) — 갱신은 saveSticker가 요청
-        let entry = StickerEntry(date: Date(), imageData: SharedStore.stickerData())
+        // 스티커는 앱에서 저장할 때만 바뀌므로 자동 새로고침 없음(.never) — 갱신은 saveSticker가 요청
+        let entry = StickerEntry(date: Date(), imageData: SharedStore.widgetImageData())
         completion(Timeline(entries: [entry], policy: .never))
     }
 }
@@ -54,7 +54,7 @@ struct PetickerWidgetEntryView: View {
                     // 아직 스티커를 만들지 않은 경우 안내
                     VStack(spacing: 6) {
                         Image(systemName: "pawprint.fill")
-                            .font(.system(size: 26))
+                            .font(.system(size: 24))
                         Text("앱에서 스티커를\n만들어 주세요")
                             .font(.system(size: 11, weight: .semibold))
                             .multilineTextAlignment(.center)
