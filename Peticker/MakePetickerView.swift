@@ -158,7 +158,7 @@ struct MakePetickerView: View {
             Spacer(minLength: 16)
             palette(width: size.width)
             Spacer().frame(height: min(44, size.height * 0.06))
-            Button(action: onClose) {        // TODO: 위젯 저장(M3) 연결 예정
+            Button(action: saveAndClose) {   // 완성 스티커를 공유 저장소에 저장 → 위젯 표시
                 Text("DONE")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.black)
@@ -298,6 +298,14 @@ struct MakePetickerView: View {
     private func restroke() async {
         guard let cutout else { return }
         sticker = await StickerStyler.addStroke(to: cutout, color: selectedColor.uiColor)
+    }
+
+    // DONE — 완성된 스티커를 공유 저장소에 저장(위젯이 읽어 표시)한 뒤 화면 닫기
+    private func saveAndClose() {
+        if let sticker {
+            SharedStore.saveSticker(sticker)
+        }
+        onClose()
     }
 }
 
