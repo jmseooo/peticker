@@ -19,6 +19,9 @@ enum SharedStore {
     // 색상값을 직접 저장해 위젯 타겟이 앱의 Color 확장(Colors.swift)에 의존하지 않게 한다.
     private static let backgroundColorKey = "widgetBackgroundColorRGBA"
 
+    // 앱이 마지막으로 관찰한 배터리 퍼센트 — 위젯이 직접 못 읽을 때의 대비책
+    private static let batteryPercentKey = "lastKnownBatteryPercent"
+
     private static var defaults: UserDefaults? {
         UserDefaults(suiteName: appGroupID)
     }
@@ -66,6 +69,18 @@ enum SharedStore {
         return (v[0], v[1], v[2], v[3])
     }
 
+    /// 앱이 관찰한 배터리 퍼센트를 저장 (위젯 대비책). 위젯 갱신은 요청하지 않는다 —
+    /// 1%마다 reloadTimelines를 부르면 위젯 새로고침 예산을 금방 소진하기 때문.
+    static func saveBatteryPercent(_ percent: Int) {
+        defaults?.set(percent, forKey: batteryPercentKey)
+    }
+
+    /// 앱이 마지막으로 남긴 배터리 퍼센트. 한 번도 저장된 적 없으면 nil.
+    static func lastKnownBatteryPercent() -> Int? {
+        guard let defaults, defaults.object(forKey: batteryPercentKey) != nil else { return nil }
+        return defaults.integer(forKey: batteryPercentKey)
+    }
+
     /// 위젯·메인 화면 미리보기가 함께 쓰는 배경색과 그 위에 얹을 전경색(100% 표시).
     /// 아직 배경색을 고른 적 없으면 흰 배경 + 검정 전경.
     static func widgetColors() -> (background: Color, foreground: Color) {
@@ -110,5 +125,54 @@ enum SharedStore {
         return UIGraphicsImageRenderer(size: newSize, format: format).image { _ in
             image.draw(in: CGRect(origin: .zero, size: newSize))
         }
+    }
+}
+
+// 기기 배터리 읽기 — 앱과 위젯 익스텐션이 함께 사용
+enum Battery {
+    // 못 읽을 때 보여줄 값 (시뮬레이터 등)
+    static let fallbackPercent = 100
+
+    /// 현재 기기 배터리 퍼센트(0~100). 읽을 수 없으면 nil.
+    /// 위젯 익스텐션에서는 값이 갱신되지 않거나 -1이 나올 수 있어, 호출부에서 대비책을 둔다.
+    static func currentPercent() -> Int? {
+        let device = UIDevice.current
+        if !device.isBatteryMonitoringEnabled {
+            device.isBatteryMonitoringEnabled = true
+        }
+        let level = device.batteryLevel   // 0.0~1.0, 알 수 없으면 -1
+        guard level >= 0 else { return nil }
+        return Int((level * 100).rounded())
+    }
+}
+
+/// 앱에서 배터리 변화를 관찰해 화면에 반영하고, 위젯이 읽을 수 있도록 공유 저장소에 남긴다.
+@MainActor
+@Observable
+final class BatteryMonitor {
+    static let shared = BatteryMonitor()
+
+    private(set) var percent: Int
+
+    private init() {
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        percent = Battery.currentPercent()
+            ?? SharedStore.lastKnownBatteryPercent()
+            ?? Battery.fallbackPercent
+        SharedStore.saveBatteryPercent(percent)
+
+        NotificationCenter.default.addObserver(
+            forName: UIDevice.batteryLevelDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        }
+    }
+
+    private func refresh() {
+        guard let current = Battery.currentPercent(), current != percent else { return }
+        percent = current
+        SharedStore.saveBatteryPercent(current)
     }
 }

@@ -230,7 +230,7 @@ struct MakePetickerView: View {
 
     // 홈 화면 위젯처럼 보이는 원(배경색은 Background 팔레트) + 스티커
     private func widgetPreview(diameter d: CGFloat) -> some View {
-        // 상단 100% 표시를 피하면서 원 안에 완전히 들어가는 스티커 자리
+        // 상단 배터리 표시를 피하면서 원 안에 완전히 들어가는 스티커 자리
         let layout = StickerCircleLayout(diameter: d, aspectRatio: (sticker ?? currentImage).aspectRatio)
 
         return ZStack {
@@ -238,15 +238,15 @@ struct MakePetickerView: View {
                 .fill(showChangeButton ? Color(white: 0.55) : selectedBackground.color)
                 .frame(width: d, height: d)
 
-            // 스티커 — 100% 표시 아래, 원 안쪽에 내접하도록 배치
+            // 스티커 — 배터리 표시 아래, 원 안쪽에 내접하도록 배치
             stickerImage
                 .frame(width: layout.size.width, height: layout.size.height)
                 .offset(y: layout.offsetY)
 
-            // 100% — 원 상단 근처 (변경 모드에선 숨김)
+            // 배터리 퍼센트 — 원 상단 근처 (변경 모드에선 숨김)
             if !showChangeButton {
                 VStack(spacing: 0) {
-                    Text("100%")
+                    Text("\(BatteryMonitor.shared.percent)%")
                         .font(.system(size: 15, weight: .bold))
                         // 검정 배경에서도 보이도록 대비색 사용
                         .foregroundStyle(selectedBackground.contrastColor)

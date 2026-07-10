@@ -6,15 +6,21 @@ struct StickerEntry: TimelineEntry {
     let date: Date
     let imageData: Data?
     let background: Color
-    let foreground: Color   // 배경 위 100% 표시 색 (어두운 배경에선 흰색)
+    let foreground: Color    // 배경 위 배터리 표시 색 (어두운 배경에선 흰색)
+    let batteryPercent: Int
 
     static func current(imageData: Data?) -> StickerEntry {
         let colors = SharedStore.widgetColors()
+        // 익스텐션에서 UIDevice 값이 갱신되지 않는 경우가 있어, 앱이 남긴 값으로 대비한다
+        let percent = Battery.currentPercent()
+            ?? SharedStore.lastKnownBatteryPercent()
+            ?? Battery.fallbackPercent
         return StickerEntry(
             date: Date(),
             imageData: imageData,
             background: colors.background,
-            foreground: colors.foreground
+            foreground: colors.foreground,
+            batteryPercent: percent
         )
     }
 }
@@ -22,7 +28,13 @@ struct StickerEntry: TimelineEntry {
 // 공유 저장소에서 스티커를 (메모리 안전하게) 읽어 타임라인을 구성
 struct StickerProvider: TimelineProvider {
     func placeholder(in context: Context) -> StickerEntry {
-        StickerEntry(date: Date(), imageData: nil, background: .white, foreground: .black)
+        StickerEntry(
+            date: Date(),
+            imageData: nil,
+            background: .white,
+            foreground: .black,
+            batteryPercent: Battery.fallbackPercent
+        )
     }
 
     func getSnapshot(in context: Context, completion: @escaping (StickerEntry) -> Void) {
@@ -30,8 +42,10 @@ struct StickerProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<StickerEntry>) -> Void) {
-        // 스티커·배경색은 앱에서 저장할 때만 바뀌므로 자동 새로고침 없음(.never) — 갱신은 앱이 요청
-        completion(Timeline(entries: [.current(imageData: SharedStore.widgetImageData())], policy: .never))
+        // 스티커·배경색은 앱이 저장할 때 갱신을 요청하지만, 배터리는 스스로 바뀌므로
+        // 주기적으로 다시 읽는다. iOS가 새로고침 예산을 관리하므로 실제 주기는 더 길 수 있다.
+        let next = Date().addingTimeInterval(15 * 60)
+        completion(Timeline(entries: [.current(imageData: SharedStore.widgetImageData())], policy: .after(next)))
     }
 }
 
@@ -41,9 +55,9 @@ struct PetickerWidgetEntryView: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // 100% — 위젯 상단 (앱 미리보기와 동일한 구성)
+                // 배터리 퍼센트 — 위젯 상단 (앱 미리보기와 동일한 구성)
                 VStack {
-                    Text("100%")
+                    Text("\(entry.batteryPercent)%")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(entry.foreground)
                         .padding(.top, 4)
@@ -51,7 +65,7 @@ struct PetickerWidgetEntryView: View {
                 }
 
                 if let data = entry.imageData, let image = UIImage(data: data) {
-                    // 스티커 — 상단 100% 표시를 침범하지 않도록 위쪽 여백 확보
+                    // 스티커 — 상단 배터리 표시를 침범하지 않도록 위쪽 여백 확보
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFit()
@@ -95,5 +109,5 @@ struct PetickerWidget: Widget {
 #Preview(as: .systemSmall) {
     PetickerWidget()
 } timeline: {
-    StickerEntry(date: Date(), imageData: nil, background: .white, foreground: .black)
+    StickerEntry(date: Date(), imageData: nil, background: .white, foreground: .black, batteryPercent: 100)
 }
