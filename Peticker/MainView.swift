@@ -1,6 +1,50 @@
 import SwiftUI
 import PhotosUI
 
+/// 홈 화면 위젯처럼 보이는 원 — 완성 스티커가 있으면 그 모습, 없으면 청록 추가 버튼.
+/// 별도 View로 둔다 (MainView의 메서드로 두면 MainActor 격리가 번져 GeometryReader 클로저에서 못 쓴다).
+struct WidgetCircle: View {
+    let diameter: CGFloat
+    let sticker: UIImage?
+    let metrics: StickerMetrics?
+    let background: Color
+    let foreground: Color
+    let batteryPercent: Int
+
+    var body: some View {
+        Circle()
+            .fill(sticker == nil ? Color.brandCyan : background)
+            .frame(width: diameter)
+            .overlay {
+                if let sticker {
+                    // 완성 상태 — 배터리 퍼센트 + 스티커(위젯 미리보기와 동일 구성)
+                    let layout = StickerCircleLayout(diameter: diameter, metrics: metrics)
+                    ZStack {
+                        VStack(spacing: 0) {
+                            Text("\(batteryPercent)%")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(foreground)
+                                .padding(.top, diameter * 0.117)   // 제작 화면과 동일 비율
+                            Spacer()
+                        }
+                        // 배터리 표시 아래, 원 안쪽에 내접하도록 배치
+                        Image(uiImage: sticker)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: layout.size.width, height: layout.size.height)
+                            .offset(y: layout.offsetY)
+                    }
+                    .frame(width: diameter, height: diameter)
+                } else {
+                    Image("PlusIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 110, height: 110)
+                }
+            }
+    }
+}
+
 struct MainView: View {
     @Environment(AppRouter.self) var router
     @State private var showComingSoon = false
@@ -9,6 +53,7 @@ struct MainView: View {
     @State private var pickedPhoto: PickedPhoto?
     @State private var isLoadingPhoto = false
     @State private var savedSticker: UIImage?   // 완성 후 청록 원에 표시할 스티커(위젯과 동일 결과)
+    @State private var savedOriginal: UIImage?  // 다시 편집할 원본 사진 (없으면 편집 불가)
     @State private var stickerMetrics: StickerMetrics?   // 스티커 배치용 불투명 픽셀 분포(캐시)
     @State private var widgetBackground: Color = .white   // 제작 화면에서 고른 위젯 배경색
     @State private var widgetForeground: Color = .black   // 그 위에 얹는 배터리 표시 색
@@ -16,6 +61,7 @@ struct MainView: View {
     // 저장된 스티커와 배경색을 함께 읽어 미리보기를 위젯과 같은 모습으로 맞춘다
     private func reloadWidgetPreview() {
         savedSticker = SharedStore.loadSticker()
+        savedOriginal = SharedStore.loadOriginal()
         stickerMetrics = savedSticker.flatMap(StickerMetrics.analyze)
         let colors = SharedStore.widgetColors()
         widgetBackground = colors.background
@@ -57,43 +103,23 @@ struct MainView: View {
                         .transition(.opacity)
                 }
 
-                // 청록 추가 버튼 — 딤 위
-                PhotosPicker(selection: $selectedItem, matching: .images) {
-                    let diameter = w * 0.72
-                    Circle()
-                        // 완성 스티커가 있으면 위젯과 같은 배경색, 없으면 청록 추가 버튼
-                        .fill(savedSticker == nil ? Color.brandCyan : widgetBackground)
-                        .frame(width: diameter)
-                        .overlay {
-                            if let savedSticker {
-                                // 완성 상태 — 배터리 퍼센트 + 스티커(위젯 미리보기와 동일 구성)
-                                let layout = StickerCircleLayout(
-                                    diameter: diameter,
-                                    metrics: stickerMetrics
-                                )
-                                ZStack {
-                                    VStack(spacing: 0) {
-                                        Text("\(BatteryMonitor.shared.percent)%")
-                                            .font(.system(size: 16, weight: .bold))
-                                            .foregroundStyle(widgetForeground)
-                                            .padding(.top, diameter * 0.117)   // 제작 화면과 동일 비율
-                                        Spacer()
-                                    }
-                                    // 배터리 표시 아래, 원 안쪽에 내접하도록 배치
-                                    Image(uiImage: savedSticker)
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: layout.size.width, height: layout.size.height)
-                                        .offset(y: layout.offsetY)
-                                }
-                                .frame(width: diameter, height: diameter)
-                            } else {
-                                Image("PlusIcon")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 110, height: 110)
-                            }
-                        }
+                // 원 — 딤 위. 완성 스티커를 탭하면 수정 뷰로, 없으면 사진 선택.
+                let circle = WidgetCircle(
+                    diameter: w * 0.72,
+                    sticker: savedSticker,
+                    metrics: stickerMetrics,
+                    background: widgetBackground,
+                    foreground: widgetForeground,
+                    batteryPercent: BatteryMonitor.shared.percent
+                )
+                Group {
+                    if let savedOriginal {
+                        // 완성 스티커를 탭하면 원본을 다시 불러 수정 뷰로
+                        Button { pickedPhoto = PickedPhoto(image: savedOriginal) } label: { circle }
+                    } else {
+                        // 원본이 없으면(첫 제작이거나 원본 저장 이전 버전) 사진을 고르게 한다
+                        PhotosPicker(selection: $selectedItem, matching: .images) { circle }
+                    }
                 }
                 .buttonStyle(.plain)
                 .position(x: w * 0.540, y: h * 0.524)

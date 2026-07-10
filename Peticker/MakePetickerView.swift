@@ -31,6 +31,19 @@ extension SwatchColor {
 
     // 화면 배경(F5F5F5)과 잘 구분되지 않는 밝은 스와치는 테두리를 그린다
     var needsBorder: Bool { luminance > 0.92 }
+
+    /// 공유 저장소에 저장된 색(sRGB)과 일치하는 스와치. 없거나 팔레트가 바뀌었으면 nil.
+    static func matching(_ rgba: (red: Double, green: Double, blue: Double, alpha: Double)?) -> Self? {
+        guard let c = rgba else { return nil }
+        return allCases.first { swatch in
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            guard swatch.uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return false }
+            let tolerance = 0.01
+            return abs(Double(r) - c.red) < tolerance
+                && abs(Double(g) - c.green) < tolerance
+                && abs(Double(b) - c.blue) < tolerance
+        }
+    }
 }
 
 // 위젯 배경색 팔레트
@@ -44,18 +57,7 @@ enum BackgroundColor: String, SwatchColor {
 
     var hex: String { rawValue }
 
-    // 공유 저장소에 저장된 배경색과 일치하는 팔레트 색. 아직 고른 적 없으면 nil.
-    static func saved() -> BackgroundColor? {
-        guard let c = SharedStore.backgroundColorRGBA() else { return nil }
-        return allCases.first { swatch in
-            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-            guard swatch.uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return false }
-            let tolerance = 0.01
-            return abs(Double(r) - c.red) < tolerance
-                && abs(Double(g) - c.green) < tolerance
-                && abs(Double(b) - c.blue) < tolerance
-        }
-    }
+    static func saved() -> BackgroundColor? { matching(SharedStore.backgroundColorRGBA()) }
 }
 
 // 스티커 테두리 색 팔레트
@@ -68,6 +70,8 @@ enum OutlineColor: String, SwatchColor {
     case black  = "000000"
 
     var hex: String { rawValue }
+
+    static func saved() -> OutlineColor? { matching(SharedStore.outlineColorRGBA()) }
 }
 
 /// 스티커의 불투명 픽셀 분포. 사각 바운딩박스가 아니라 실제 그림이 차지하는 범위를 잰다.
@@ -233,7 +237,7 @@ struct MakePetickerView: View {
     @State private var cutout: UIImage?              // 누끼 결과(테두리 없음)
     @State private var sticker: UIImage?             // 현재 색 테두리 적용 결과
     @State private var metrics: StickerMetrics?      // 스티커 배치용 불투명 픽셀 분포(캐시)
-    @State private var selectedStroke: OutlineColor = .cyan       // 스티커 테두리 색
+    @State private var selectedStroke: OutlineColor               // 스티커 테두리 색
     @State private var selectedBackground: BackgroundColor        // 위젯 배경색
     @State private var isProcessing = true
     @State private var showChangeButton = false      // 원 탭 시 딤 + Change 버튼 표시
@@ -241,8 +245,9 @@ struct MakePetickerView: View {
 
     init(originalImage: UIImage, onClose: @escaping () -> Void) {
         _currentImage = State(initialValue: originalImage)
-        // 이전에 고른 배경색을 이어받는다 (DONE 시 흰색으로 되돌아가지 않도록)
+        // 이전에 고른 색을 이어받는다 (다시 편집할 때 초기화되지 않도록)
         _selectedBackground = State(initialValue: BackgroundColor.saved() ?? .paper)
+        _selectedStroke = State(initialValue: OutlineColor.saved() ?? .cyan)
         self.onClose = onClose
     }
 
@@ -568,8 +573,11 @@ struct MakePetickerView: View {
         metrics = restroked.flatMap(StickerMetrics.analyze)
     }
 
-    // DONE — 배경색과 완성 스티커를 공유 저장소에 저장(위젯이 읽어 표시)한 뒤 화면 닫기
+    // DONE — 완성 스티커·배경색을 공유 저장소에 저장(위젯이 읽어 표시)한 뒤 화면 닫기.
+    // 원본 사진과 테두리 색도 함께 남겨, 메인 화면에서 스티커를 탭하면 다시 편집할 수 있게 한다.
     private func saveAndClose() {
+        SharedStore.saveOriginal(currentImage)
+        SharedStore.saveOutlineColor(selectedStroke.uiColor)
         SharedStore.saveBackgroundColor(selectedBackground.uiColor)
         if let sticker {
             SharedStore.saveSticker(sticker)

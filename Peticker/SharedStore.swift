@@ -15,6 +15,13 @@ enum SharedStore {
 
     private static let stickerFileName = "sticker.png"
 
+    // 완성 스티커를 다시 편집하려면 원본 사진이 있어야 한다 (누끼를 새로 뜬다).
+    // 사진이라 알파가 없으므로 JPEG로 저장해 용량을 아낀다.
+    private static let originalFileName = "original.jpg"
+
+    // 다시 편집할 때 이어받을 테두리 색
+    private static let outlineColorKey = "stickerOutlineColorRGBA"
+
     // 위젯 배경색 — sRGB [r, g, b, a] 4요소로 저장.
     // 색상값을 직접 저장해 위젯 타겟이 앱의 Color 확장(Colors.swift)에 의존하지 않게 한다.
     private static let backgroundColorKey = "widgetBackgroundColorRGBA"
@@ -34,6 +41,11 @@ enum SharedStore {
     // 공유 컨테이너 내 스티커 파일 경로
     private static var stickerURL: URL? {
         containerURL?.appendingPathComponent(stickerFileName)
+    }
+
+    // 공유 컨테이너 내 원본 사진 경로
+    private static var originalURL: URL? {
+        containerURL?.appendingPathComponent(originalFileName)
     }
 
     /// 완성된 스티커를 저장. 위젯 메모리 한도(약 30MB)를 넘지 않도록 저장 시 축소한다.
@@ -64,6 +76,36 @@ enum SharedStore {
     /// 저장된 위젯 배경색(sRGB). 아직 고른 적 없으면 nil.
     static func backgroundColorRGBA() -> (red: Double, green: Double, blue: Double, alpha: Double)? {
         guard let v = defaults?.array(forKey: backgroundColorKey) as? [Double], v.count == 4 else {
+            return nil
+        }
+        return (v[0], v[1], v[2], v[3])
+    }
+
+    /// 다시 편집할 수 있도록 원본 사진을 저장. 누끼를 새로 뜨기에 충분한 해상도로 줄인다.
+    @discardableResult
+    static func saveOriginal(_ image: UIImage) -> Bool {
+        guard let url = originalURL else { return false }
+        let resized = downscaled(image, maxPixel: 1600)
+        guard let data = resized.jpegData(compressionQuality: 0.9) else { return false }
+        return (try? data.write(to: url, options: .atomic)) != nil
+    }
+
+    /// 저장된 원본 사진. 아직 스티커를 만든 적 없으면 nil.
+    static func loadOriginal() -> UIImage? {
+        guard let url = originalURL, let data = try? Data(contentsOf: url) else { return nil }
+        return UIImage(data: data)
+    }
+
+    /// 다시 편집할 때 이어받을 테두리 색을 저장. 위젯과 무관하므로 갱신은 요청하지 않는다.
+    static func saveOutlineColor(_ color: UIColor) {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard color.getRed(&r, green: &g, blue: &b, alpha: &a) else { return }
+        defaults?.set([Double(r), Double(g), Double(b), Double(a)], forKey: outlineColorKey)
+    }
+
+    /// 저장된 테두리 색(sRGB). 아직 고른 적 없으면 nil.
+    static func outlineColorRGBA() -> (red: Double, green: Double, blue: Double, alpha: Double)? {
+        guard let v = defaults?.array(forKey: outlineColorKey) as? [Double], v.count == 4 else {
             return nil
         }
         return (v[0], v[1], v[2], v[3])
