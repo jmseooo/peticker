@@ -76,7 +76,7 @@ struct MainView: View {
                                         Text("\(BatteryMonitor.shared.percent)%")
                                             .font(.system(size: 16, weight: .bold))
                                             .foregroundStyle(widgetForeground)
-                                            .padding(.top, diameter * 0.05)
+                                            .padding(.top, diameter * 0.117)   // 제작 화면과 동일 비율
                                         Spacer()
                                     }
                                     // 배터리 표시 아래, 원 안쪽에 내접하도록 배치

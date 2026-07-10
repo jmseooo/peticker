@@ -46,10 +46,9 @@ enum PaletteColor: CaseIterable, Identifiable {
 /// 스티커의 불투명 픽셀 분포. 사각 바운딩박스가 아니라 실제 그림이 차지하는 범위를 잰다.
 /// 박스 모서리는 대개 투명하므로, 이 값을 쓰면 원 밖으로 나가지 않으면서 훨씬 크게 채울 수 있다.
 struct StickerMetrics {
-    let imageSize: CGSize    // 원본 이미지 크기(pt)
-    let radius: CGFloat      // 이미지 중심에서 가장 먼 불투명 픽셀까지 거리(pt)
-    let topRise: CGFloat     // 이미지 중심에서 가장 위쪽 불투명 픽셀까지 거리(pt)
-    let bottomDrop: CGFloat  // 이미지 중심에서 가장 아래쪽 불투명 픽셀까지 거리(pt)
+    let imageSize: CGSize   // 원본 이미지 크기(pt)
+    let radius: CGFloat     // 이미지 중심에서 가장 먼 불투명 픽셀까지 거리(pt)
+    let topRise: CGFloat    // 이미지 중심에서 가장 위쪽 불투명 픽셀까지 거리(pt)
 
     /// 알파 채널을 축소본으로 훑어 계산한다. 불투명 픽셀이 없으면 nil.
     static func analyze(_ image: UIImage) -> StickerMetrics? {
@@ -76,7 +75,6 @@ struct StickerMetrics {
 
         var radius: CGFloat = 0
         var topRise: CGFloat = 0
-        var bottomDrop: CGFloat = 0
         var found = false
 
         for y in 0..<h {
@@ -85,33 +83,28 @@ struct StickerMetrics {
                 let dx = (CGFloat(x) + 0.5 - centerX) * fx
                 let dy = (CGFloat(y) + 0.5 - centerY) * fy
                 radius = max(radius, sqrt(dx * dx + dy * dy))
-                topRise = max(topRise, -dy)     // 중심보다 위쪽(dy < 0)인 거리
-                bottomDrop = max(bottomDrop, dy) // 중심보다 아래쪽(dy > 0)인 거리
+                topRise = max(topRise, -dy)   // 중심보다 위쪽(dy < 0)인 거리
             }
         }
         guard found, radius > 0 else { return nil }
-        return StickerMetrics(
-            imageSize: image.size,
-            radius: radius,
-            topRise: topRise,
-            bottomDrop: bottomDrop
-        )
+        return StickerMetrics(imageSize: image.size, radius: radius, topRise: topRise)
     }
 }
 
 /// 원형 위젯 프리뷰 안에서 스티커가 놓일 자리(크기 + 세로 이동량).
-/// 세 조건을 동시에 만족시킨다.
+/// 두 조건을 동시에 만족시킨다.
 ///  1) 상단 배터리 표시 영역을 침범하지 않는다 — 불투명 픽셀은 safeTop 아래에만.
 ///  2) 스티커가 원 밖으로 나가지 않는다 — 모든 불투명 픽셀이 원 안.
-///  3) 배터리 표시 아래부터 원 바닥까지의 구간에 세로 중앙정렬한다.
-///     (원 중심에 맞추면 위쪽에 배터리 여백이 있어 스티커가 올라가 보인다)
+///
+/// 디자인(Figma 139:1602)대로 원 중심에 정렬하고, 위 두 제약이 허락하는 최대 배율로 키운다.
 struct StickerCircleLayout {
     let size: CGSize      // 스티커 프레임 크기
-    let offsetY: CGFloat  // 원 중심 기준 세로 이동량
+    let offsetY: CGFloat  // 원 중심 기준 세로 이동량 (원 중심 정렬이므로 0)
 
     // 원 상단에서 잰, 배터리 표시가 차지하는 영역 (지름 대비 비율).
-    // 이 값이 스티커 크기를 좌우한다 — 위쪽 여유가 곧 배율 상한이 되기 때문.
-    private static let safeTopRatio: CGFloat = 0.13
+    // 디자인의 100% 텍스트 하단(0.178d) 아래로 여유를 둔 값.
+    // 이 값이 스티커 크기를 좌우한다 — 원 중심 정렬이라 위쪽 여유가 곧 배율 상한이 되기 때문.
+    private static let safeTopRatio: CGFloat = 0.20
 
     // 제약이 허락하는 최대치를 그대로 쓰면 가장자리에 딱 붙어 답답해 보이므로 살짝 줄인다
     private static let fillRatio: CGFloat = 0.94
@@ -137,17 +130,21 @@ struct StickerCircleLayout {
             width: metrics.imageSize.width * scale,
             height: metrics.imageSize.height * scale
         )
+        self.offsetY = 0
+    }
+}
 
-        // 배터리 표시 아래(safeTop) ~ 원 바닥 구간의 중앙 (원 중심 기준)
-        let bandCenter = (Self.safeTopRatio * d + d) / 2 - r
-
-        // 그림이 위아래로 비대칭일 수 있으므로, 프레임이 아니라 불투명 영역의 중심을 맞춘다
-        let contentCenter = scale * (metrics.bottomDrop - metrics.topRise) / 2
-        let desired = bandCenter - contentCenter
-
-        // 내려놓다가 원 밖으로 밀려나지 않도록 이동량을 제한한다
-        let limit = max(0, r - scale * metrics.radius)
-        self.offsetY = min(max(desired, -limit), limit)
+/// 화면(window)의 안전영역 인셋.
+/// 이 화면은 fullScreenCover로 표시되는데 그 컨텍스트에선 GeometryProxy의 safeAreaInsets가
+/// 0으로 내려와 상단 바가 상태바를 덮는다. 표시 방식에 흔들리지 않도록 창에서 직접 읽는다.
+@MainActor
+enum ScreenSafeArea {
+    static var insets: UIEdgeInsets {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first { $0.isKeyWindow }?
+            .safeAreaInsets ?? .zero
     }
 }
 
@@ -185,7 +182,9 @@ struct MakePetickerView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        // 배경은 background로 분리 — 안전영역만 넘어가고 레이아웃(상단 바 위치)엔 영향 없음
+        // 화면 전체를 좌표계로 삼고, 안전영역은 ScreenSafeArea로 직접 더한다.
+        // (fullScreenCover에선 GeometryProxy의 safeAreaInsets를 신뢰할 수 없다)
+        .ignoresSafeArea()
         .background(Color.bgBase.ignoresSafeArea())
         .task {
             await processImage()
@@ -216,9 +215,14 @@ struct MakePetickerView: View {
 
     // MARK: - 상단 바 (두 화면 공통) — 좌측 뒤로가기 + 중앙 타이틀
 
-    // 디자인(Figma 55:1696) 기준 화면 최상단에서의 위치
-    private let topBarY: CGFloat = 99      // 상단바 y (뒤로가기·타이틀 정렬)
-    private let backButtonX: CGFloat = 24  // 뒤로가기 좌측 여백
+    // 디자인(Figma 139:1602)은 상태바(47) 아래 22 지점에 상단 바를 둔다.
+    // 상단 바와 본문 모두 안전영역 기준으로 배치한다 — 좌표계를 섞으면 기기마다 간격이 어긋난다.
+    private let titleTopGap: CGFloat = 22   // 안전영역 상단 ↔ 상단 바
+    private let topBarHeight: CGFloat = 29  // 타이틀·뒤로가기 높이
+    private let backButtonX: CGFloat = 24   // 뒤로가기 좌측 여백
+
+    // 화면 최상단에서 잰 상단 바의 y (상태바를 덮지 않도록 인셋만큼 내린다)
+    private var topBarY: CGFloat { ScreenSafeArea.insets.top + titleTopGap }
 
     private var topBar: some View {
         ZStack(alignment: .topLeading) {
@@ -231,7 +235,6 @@ struct MakePetickerView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .ignoresSafeArea()   // 화면 최상단 기준 절대 좌표 (디자인과 동일)
     }
 
     private var backButton: some View {
@@ -275,19 +278,32 @@ struct MakePetickerView: View {
     // MARK: - Ready (Figma 55:1696)
 
     private func readyContent(_ size: CGSize) -> some View {
-        // 폭 기준 지름(디자인 281/375)에 높이 상한을 둬서 짧은 기기에서도 안 잘리게
-        let diameter = min(size.width * 0.75, size.height * 0.42)
+        // 디자인(Figma 139:1602) 기준 세로 간격
+        let gapToCircle: CGFloat = 77    // 상단 바 하단 ↔ 원
+        let gapBelowCircle: CGFloat = 46 // 원 ↔ Background 라벨
+        let gapToDone: CGFloat = 54      // Outline 행 ↔ DONE
+        let bottomInset: CGFloat = 16
+
+        // 상단 바와 같은 절대 좌표계(화면 최상단 기준)이므로 그 아래로 그대로 쌓는다
+        let leading = topBarY + topBarHeight + gapToCircle
+
+        // 하단 홈 인디케이터 위로 DONE이 들어오도록 남는 높이에 맞춰 원을 줄인다
+        let paletteHeight = paletteHeight(width: size.width)
+        let bottomLimit = size.height - ScreenSafeArea.insets.bottom - bottomInset
+        let available = bottomLimit - leading - gapBelowCircle - paletteHeight - gapToDone - doneHeight
+        let diameter = max(0, min(size.width * 0.75, available))
+
+        // 간격을 고정해 위에서부터 쌓고, 남는 공간은 맨 아래 Spacer가 흡수한다
         return VStack(spacing: 0) {
-            Spacer(minLength: 16)
+            Spacer().frame(height: leading)
             widgetPreview(diameter: diameter)
-            Spacer(minLength: 16)
+            Spacer().frame(height: gapBelowCircle)
             palette(width: size.width)
-            Spacer().frame(height: min(42, size.height * 0.06))   // 디자인: Outline 행 ↔ DONE 42
+            Spacer().frame(height: gapToDone)
             doneButton
+            Spacer(minLength: 0)   // 남는 높이는 아래로
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.top, size.height * 0.09)   // 상단 바 아래 여백
-        .padding(.bottom, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     // 홈 화면 위젯처럼 보이는 원(배경색은 Background 팔레트) + 스티커
@@ -312,7 +328,7 @@ struct MakePetickerView: View {
                         .font(.system(size: 15, weight: .bold))
                         // 검정 배경에서도 보이도록 대비색 사용
                         .foregroundStyle(selectedBackground.contrastColor)
-                        .padding(.top, d * 0.06)
+                        .padding(.top, d * 0.117)   // 디자인: 원 상단에서 33 (33/281)
                     Spacer()
                 }
                 .frame(width: d, height: d)
@@ -370,10 +386,19 @@ struct MakePetickerView: View {
     private let swatchSpacing: CGFloat = 12.6   // (327 - 44*6) / 5
     private let maxSwatchSize: CGFloat = 44
 
-    private func palette(width: CGFloat) -> some View {
+    // 사용 가능한 폭에 맞춰 스와치 크기 조정(좁은 기기에서 잘리지 않도록), 최대 44
+    private func swatchSize(width: CGFloat) -> CGFloat {
         let n = CGFloat(PaletteColor.allCases.count)
-        // 사용 가능한 폭에 맞춰 스와치 크기 조정(좁은 기기에서 잘리지 않도록), 최대 44
-        let size = min(maxSwatchSize, (width - paletteInset * 2 - swatchSpacing * (n - 1)) / n)
+        return min(maxSwatchSize, (width - paletteInset * 2 - swatchSpacing * (n - 1)) / n)
+    }
+
+    // 라벨 17 + 7 + 스와치 행 + 17 + 라벨 17 + 7 + 스와치 행
+    private func paletteHeight(width: CGFloat) -> CGFloat {
+        17 + 7 + swatchSize(width: width) + 17 + 17 + 7 + swatchSize(width: width)
+    }
+
+    private func palette(width: CGFloat) -> some View {
+        let size = swatchSize(width: width)
         return VStack(alignment: .leading, spacing: 0) {
             paletteLabel("Background")
             Spacer().frame(height: 7)
@@ -442,12 +467,14 @@ struct MakePetickerView: View {
     }
 
     // DONE — 140x48 캡슐, 1pt 검정 테두리 (Figma 119:1802)
+    private let doneHeight: CGFloat = 48
+
     private var doneButton: some View {
         Button(action: saveAndClose) {
             Text("DONE")
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(.black)
-                .frame(width: 140, height: 48)
+                .frame(width: 140, height: doneHeight)
                 .overlay { Capsule().stroke(Color.black, lineWidth: 1) }
                 .contentShape(Capsule())
         }
