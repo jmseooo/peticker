@@ -60,7 +60,8 @@ struct PetickerWidgetEntryView: View {
                     Text("\(entry.batteryPercent)%")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(entry.foreground)
-                        .padding(.top, 4)
+                        // 위젯 크기에 비례한 상단 여백 (스티커 안전선 0.24h 위)
+                        .padding(.top, geo.size.height * 0.08)
                     Spacer()
                 }
 
