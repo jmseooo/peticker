@@ -9,6 +9,16 @@ struct MainView: View {
     @State private var pickedPhoto: PickedPhoto?
     @State private var isLoadingPhoto = false
     @State private var savedSticker: UIImage?   // 완성 후 청록 원에 표시할 스티커(위젯과 동일 결과)
+    @State private var widgetBackground: Color = .white   // 제작 화면에서 고른 위젯 배경색
+    @State private var widgetForeground: Color = .black   // 그 위에 얹는 100% 표시 색
+
+    // 저장된 스티커와 배경색을 함께 읽어 미리보기를 위젯과 같은 모습으로 맞춘다
+    private func reloadWidgetPreview() {
+        savedSticker = SharedStore.loadSticker()
+        let colors = SharedStore.widgetColors()
+        widgetBackground = colors.background
+        widgetForeground = colors.foreground
+    }
 
     var body: some View {
         ZStack {
@@ -49,29 +59,25 @@ struct MainView: View {
                 PhotosPicker(selection: $selectedItem, matching: .images) {
                     let diameter = w * 0.72
                     Circle()
-                        // 완성 스티커가 있으면 흰 원(위젯과 동일), 없으면 청록 추가 버튼
-                        .fill(savedSticker == nil ? Color.brandCyan : Color.white)
+                        // 완성 스티커가 있으면 위젯과 같은 배경색, 없으면 청록 추가 버튼
+                        .fill(savedSticker == nil ? Color.brandCyan : widgetBackground)
                         .frame(width: diameter)
                         .overlay {
                             if let savedSticker {
-                                // 완성 상태 — 배터리 100% + 스티커(위젯 미리보기와 동일 구성)
+                                // 완성 상태 — 100% + 스티커(위젯 미리보기와 동일 구성)
                                 let layout = StickerCircleLayout(
                                     diameter: diameter,
                                     aspectRatio: savedSticker.aspectRatio
                                 )
                                 ZStack {
                                     VStack(spacing: 0) {
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "battery.100")
-                                                .font(.system(size: 16))
-                                            Text("100%")
-                                                .font(.system(size: 16, weight: .bold))
-                                        }
-                                        .foregroundStyle(.primary)
-                                        .padding(.top, diameter * 0.18)
+                                        Text("100%")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundStyle(widgetForeground)
+                                            .padding(.top, diameter * 0.18)
                                         Spacer()
                                     }
-                                    // 배터리 아래, 원 안쪽에 내접하도록 배치
+                                    // 100% 표시 아래, 원 안쪽에 내접하도록 배치
                                     Image(uiImage: savedSticker)
                                         .resizable()
                                         .scaledToFit()
@@ -106,7 +112,7 @@ struct MainView: View {
             MakePetickerView(originalImage: photo.image) {
                 pickedPhoto = nil
                 selectedItem = nil
-                savedSticker = SharedStore.loadSticker()   // 완성 결과를 청록 원에 반영
+                reloadWidgetPreview()   // 완성 결과(스티커·배경색)를 원에 반영
             }
         }
         .onChange(of: selectedItem) { _, newItem in
@@ -123,7 +129,7 @@ struct MainView: View {
             }
         }
         .onAppear {
-            savedSticker = SharedStore.loadSticker()   // 이전에 만든 스티커가 있으면 청록 원에 표시
+            reloadWidgetPreview()   // 이전에 만든 스티커가 있으면 저장된 배경색과 함께 표시
             showGuide = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 withAnimation(.easeOut(duration: 0.4)) {

@@ -28,11 +28,24 @@ enum PaletteColor: CaseIterable, Identifiable {
 
     // 이 색 위에 얹는 전경색(체크 표시·배터리 텍스트) — 검정 위엔 흰색, 그 외엔 검정
     var contrastColor: Color { self == .black ? .white : .black }
+
+    // 공유 저장소에 저장된 배경색과 일치하는 팔레트 색. 아직 고른 적 없으면 nil.
+    static func savedBackground() -> PaletteColor? {
+        guard let c = SharedStore.backgroundColorRGBA() else { return nil }
+        return allCases.first { swatch in
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            guard swatch.uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return false }
+            let tolerance = 0.01
+            return abs(Double(r) - c.red) < tolerance
+                && abs(Double(g) - c.green) < tolerance
+                && abs(Double(b) - c.blue) < tolerance
+        }
+    }
 }
 
 /// 원형 위젯 프리뷰 안에서 스티커가 놓일 자리(크기 + 세로 이동량).
 /// 두 조건을 동시에 만족시킨다.
-///  1) 상단 배터리 영역을 침범하지 않는다 — 박스 위쪽은 safeTop 아래에서 시작.
+///  1) 상단 100% 표시 영역을 침범하지 않는다 — 박스 위쪽은 safeTop 아래에서 시작.
 ///  2) 스티커 박스가 원 밖으로 나가지 않는다 — 네 꼭짓점이 모두 원 안.
 ///
 /// 사각 프레임에 그냥 scaledToFit 하면 아래쪽 모서리가 원을 벗어나므로,
@@ -84,14 +97,16 @@ struct MakePetickerView: View {
     @State private var currentImage: UIImage         // 현재 처리 대상 원본(사진 변경 시 교체)
     @State private var cutout: UIImage?              // 누끼 결과(테두리 없음)
     @State private var sticker: UIImage?             // 현재 색 테두리 적용 결과
-    @State private var selectedStroke: PaletteColor = .cyan     // 스티커 테두리 색
-    @State private var selectedBackground: PaletteColor = .white // 위젯 배경색
+    @State private var selectedStroke: PaletteColor = .cyan      // 스티커 테두리 색
+    @State private var selectedBackground: PaletteColor          // 위젯 배경색
     @State private var isProcessing = true
     @State private var showChangeButton = false      // 원 탭 시 딤 + Change 버튼 표시
     @State private var pickerItem: PhotosPickerItem? // 사진 다시 고르기
 
     init(originalImage: UIImage, onClose: @escaping () -> Void) {
         _currentImage = State(initialValue: originalImage)
+        // 이전에 고른 배경색을 이어받는다 (DONE 시 흰색으로 되돌아가지 않도록)
+        _selectedBackground = State(initialValue: PaletteColor.savedBackground() ?? .white)
         self.onClose = onClose
     }
 
@@ -215,7 +230,7 @@ struct MakePetickerView: View {
 
     // 홈 화면 위젯처럼 보이는 원(배경색은 Background 팔레트) + 스티커
     private func widgetPreview(diameter d: CGFloat) -> some View {
-        // 배터리 영역을 피하면서 원 안에 완전히 들어가는 스티커 자리
+        // 상단 100% 표시를 피하면서 원 안에 완전히 들어가는 스티커 자리
         let layout = StickerCircleLayout(diameter: d, aspectRatio: (sticker ?? currentImage).aspectRatio)
 
         return ZStack {
@@ -223,23 +238,19 @@ struct MakePetickerView: View {
                 .fill(showChangeButton ? Color(white: 0.55) : selectedBackground.color)
                 .frame(width: d, height: d)
 
-            // 스티커 — 배터리 아래, 원 안쪽에 내접하도록 배치
+            // 스티커 — 100% 표시 아래, 원 안쪽에 내접하도록 배치
             stickerImage
                 .frame(width: layout.size.width, height: layout.size.height)
                 .offset(y: layout.offsetY)
 
-            // 배터리 + 100% — 원 상단 근처 (변경 모드에선 숨김)
+            // 100% — 원 상단 근처 (변경 모드에선 숨김)
             if !showChangeButton {
                 VStack(spacing: 0) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "battery.100")
-                            .font(.system(size: 15))
-                        Text("100%")
-                            .font(.system(size: 15, weight: .bold))
-                    }
-                    // 검정 배경에서도 배터리·100%가 보이도록 대비색 사용
-                    .foregroundStyle(selectedBackground.contrastColor)
-                    .padding(.top, d * 0.14)
+                    Text("100%")
+                        .font(.system(size: 15, weight: .bold))
+                        // 검정 배경에서도 보이도록 대비색 사용
+                        .foregroundStyle(selectedBackground.contrastColor)
+                        .padding(.top, d * 0.14)
                     Spacer()
                 }
                 .frame(width: d, height: d)

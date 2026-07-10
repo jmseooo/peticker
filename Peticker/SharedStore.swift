@@ -1,5 +1,6 @@
 import UIKit
 import ImageIO
+import SwiftUI
 import WidgetKit
 
 // 앱과 위젯 익스텐션이 함께 접근하는 공유 저장소 (App Group)
@@ -57,12 +58,22 @@ enum SharedStore {
         WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
     }
 
-    /// 저장된 위젯 배경색(sRGB). 아직 고른 적 없으면 nil — 호출부에서 흰색으로 대체한다.
+    /// 저장된 위젯 배경색(sRGB). 아직 고른 적 없으면 nil.
     static func backgroundColorRGBA() -> (red: Double, green: Double, blue: Double, alpha: Double)? {
         guard let v = defaults?.array(forKey: backgroundColorKey) as? [Double], v.count == 4 else {
             return nil
         }
         return (v[0], v[1], v[2], v[3])
+    }
+
+    /// 위젯·메인 화면 미리보기가 함께 쓰는 배경색과 그 위에 얹을 전경색(100% 표시).
+    /// 아직 배경색을 고른 적 없으면 흰 배경 + 검정 전경.
+    static func widgetColors() -> (background: Color, foreground: Color) {
+        guard let c = backgroundColorRGBA() else { return (.white, .black) }
+        let background = Color(.sRGB, red: c.red, green: c.green, blue: c.blue, opacity: c.alpha)
+        // sRGB 상대 휘도(근사) — 어두운 배경에선 전경을 흰색으로 뒤집어 100% 표시가 묻히지 않게 한다
+        let luminance = 0.299 * c.red + 0.587 * c.green + 0.114 * c.blue
+        return (background, luminance < 0.5 ? .white : .black)
     }
 
     /// 위젯에서 사용 — 저장된 스티커를 ImageIO로 다운샘플링해 작은 PNG 데이터로 반환.

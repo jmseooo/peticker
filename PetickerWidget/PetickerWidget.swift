@@ -6,20 +6,16 @@ struct StickerEntry: TimelineEntry {
     let date: Date
     let imageData: Data?
     let background: Color
-    let foreground: Color   // 배경 위 배터리 표시 색 (어두운 배경에선 흰색)
-
-    // 앱에서 아직 배경색을 고르지 않았으면 흰 배경 + 검정 전경
-    static func background() -> (fill: Color, foreground: Color) {
-        guard let c = SharedStore.backgroundColorRGBA() else { return (.white, .black) }
-        let fill = Color(.sRGB, red: c.red, green: c.green, blue: c.blue, opacity: c.alpha)
-        // sRGB 상대 휘도(근사) — 어두우면 전경을 흰색으로 뒤집어 배터리 표시가 묻히지 않게 한다
-        let luminance = 0.299 * c.red + 0.587 * c.green + 0.114 * c.blue
-        return (fill, luminance < 0.5 ? .white : .black)
-    }
+    let foreground: Color   // 배경 위 100% 표시 색 (어두운 배경에선 흰색)
 
     static func current(imageData: Data?) -> StickerEntry {
-        let bg = background()
-        return StickerEntry(date: Date(), imageData: imageData, background: bg.fill, foreground: bg.foreground)
+        let colors = SharedStore.widgetColors()
+        return StickerEntry(
+            date: Date(),
+            imageData: imageData,
+            background: colors.background,
+            foreground: colors.foreground
+        )
     }
 }
 
@@ -45,21 +41,17 @@ struct PetickerWidgetEntryView: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // 배터리 100% — 위젯 상단 (앱 미리보기와 동일한 구성)
+                // 100% — 위젯 상단 (앱 미리보기와 동일한 구성)
                 VStack {
-                    HStack(spacing: 4) {
-                        Image(systemName: "battery.100")
-                            .font(.system(size: 14))
-                        Text("100%")
-                            .font(.system(size: 13, weight: .bold))
-                    }
-                    .foregroundStyle(entry.foreground)
-                    .padding(.top, 4)
+                    Text("100%")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(entry.foreground)
+                        .padding(.top, 4)
                     Spacer()
                 }
 
                 if let data = entry.imageData, let image = UIImage(data: data) {
-                    // 스티커 — 상단 배터리 영역을 침범하지 않도록 위쪽 여백 확보
+                    // 스티커 — 상단 100% 표시를 침범하지 않도록 위쪽 여백 확보
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFit()
