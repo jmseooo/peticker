@@ -7,30 +7,45 @@ struct PickedPhoto: Identifiable {
     let image: UIImage
 }
 
-// 색 팔레트 (Figma 55:1696 하단 6색) — Background·Outline 두 행이 함께 사용
-enum PaletteColor: CaseIterable, Identifiable {
-    case pink, lime, cyan, yellow, white, black
+// 스와치 한 칸이 갖춰야 할 것 — Background·Outline 두 행이 같은 UI를 공유한다
+protocol SwatchColor: CaseIterable, Identifiable, Equatable where AllCases: RandomAccessCollection {
+    var hex: String { get }
+}
 
-    var id: Self { self }
+extension SwatchColor {
+    var id: String { hex }
 
-    var color: Color {
-        switch self {
-        case .pink:   return .brandPink
-        case .lime:   return .brandLime
-        case .cyan:   return .brandCyan
-        case .yellow: return .brandYellow
-        case .white:  return .white
-        case .black:  return .black
-        }
-    }
+    var color: Color { Color(hex: hex) }
 
     var uiColor: UIColor { UIColor(color) }
 
-    // 이 색 위에 얹는 전경색(체크 표시·배터리 텍스트) — 검정 위엔 흰색, 그 외엔 검정
-    var contrastColor: Color { self == .black ? .white : .black }
+    // sRGB 상대 휘도(근사). SharedStore.widgetColors와 같은 기준.
+    var luminance: CGFloat {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return 1 }
+        return 0.299 * r + 0.587 * g + 0.114 * b
+    }
+
+    // 이 색 위에 얹는 전경색(체크 표시·배터리 텍스트) — 어두운 색에선 흰색으로 뒤집는다
+    var contrastColor: Color { luminance < 0.5 ? .white : .black }
+
+    // 화면 배경(F5F5F5)과 잘 구분되지 않는 밝은 스와치는 테두리를 그린다
+    var needsBorder: Bool { luminance > 0.92 }
+}
+
+// 위젯 배경색 팔레트
+enum BackgroundColor: String, SwatchColor {
+    case plum   = "5B1445"
+    case olive  = "7E8714"
+    case sky    = "2AC8F2"
+    case butter = "F8F396"
+    case paper  = "F6F6F6"
+    case ink    = "343333"
+
+    var hex: String { rawValue }
 
     // 공유 저장소에 저장된 배경색과 일치하는 팔레트 색. 아직 고른 적 없으면 nil.
-    static func savedBackground() -> PaletteColor? {
+    static func saved() -> BackgroundColor? {
         guard let c = SharedStore.backgroundColorRGBA() else { return nil }
         return allCases.first { swatch in
             var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
@@ -41,6 +56,18 @@ enum PaletteColor: CaseIterable, Identifiable {
                 && abs(Double(b) - c.blue) < tolerance
         }
     }
+}
+
+// 스티커 테두리 색 팔레트
+enum OutlineColor: String, SwatchColor {
+    case pink   = "FF2DA0"
+    case lime   = "CAFF39"
+    case cyan   = "3DD6F5"
+    case yellow = "F5E63D"
+    case white  = "FFFFFF"
+    case black  = "000000"
+
+    var hex: String { rawValue }
 }
 
 /// 스티커의 불투명 픽셀 분포. 사각 바운딩박스가 아니라 실제 그림이 차지하는 범위를 잰다.
@@ -206,8 +233,8 @@ struct MakePetickerView: View {
     @State private var cutout: UIImage?              // 누끼 결과(테두리 없음)
     @State private var sticker: UIImage?             // 현재 색 테두리 적용 결과
     @State private var metrics: StickerMetrics?      // 스티커 배치용 불투명 픽셀 분포(캐시)
-    @State private var selectedStroke: PaletteColor = .cyan      // 스티커 테두리 색
-    @State private var selectedBackground: PaletteColor          // 위젯 배경색
+    @State private var selectedStroke: OutlineColor = .cyan       // 스티커 테두리 색
+    @State private var selectedBackground: BackgroundColor        // 위젯 배경색
     @State private var isProcessing = true
     @State private var showChangeButton = false      // 원 탭 시 딤 + Change 버튼 표시
     @State private var pickerItem: PhotosPickerItem? // 사진 다시 고르기
@@ -215,7 +242,7 @@ struct MakePetickerView: View {
     init(originalImage: UIImage, onClose: @escaping () -> Void) {
         _currentImage = State(initialValue: originalImage)
         // 이전에 고른 배경색을 이어받는다 (DONE 시 흰색으로 되돌아가지 않도록)
-        _selectedBackground = State(initialValue: PaletteColor.savedBackground() ?? .white)
+        _selectedBackground = State(initialValue: BackgroundColor.saved() ?? .paper)
         self.onClose = onClose
     }
 
@@ -436,9 +463,10 @@ struct MakePetickerView: View {
     private let swatchSpacing: CGFloat = 12.6   // (327 - 44*6) / 5
     private let maxSwatchSize: CGFloat = 44
 
-    // 사용 가능한 폭에 맞춰 스와치 크기 조정(좁은 기기에서 잘리지 않도록), 최대 44
+    // 사용 가능한 폭에 맞춰 스와치 크기 조정(좁은 기기에서 잘리지 않도록), 최대 44.
+    // 두 행의 스와치 개수는 같다.
     private func swatchSize(width: CGFloat) -> CGFloat {
-        let n = CGFloat(PaletteColor.allCases.count)
+        let n = CGFloat(BackgroundColor.allCases.count)
         return min(maxSwatchSize, (width - paletteInset * 2 - swatchSpacing * (n - 1)) / n)
     }
 
@@ -474,13 +502,13 @@ struct MakePetickerView: View {
             .foregroundStyle(.black)
     }
 
-    private func swatchRow(
+    private func swatchRow<T: SwatchColor>(
         size: CGFloat,
-        selection: PaletteColor,
-        onPick: @escaping (PaletteColor) -> Void
+        selection: T,
+        onPick: @escaping (T) -> Void
     ) -> some View {
         HStack(spacing: swatchSpacing) {
-            ForEach(PaletteColor.allCases) { swatch in
+            ForEach(T.allCases) { swatch in
                 swatchView(swatch, size: size, isSelected: swatch == selection) {
                     onPick(swatch)
                 }
@@ -488,8 +516,8 @@ struct MakePetickerView: View {
         }
     }
 
-    private func swatchView(
-        _ swatch: PaletteColor,
+    private func swatchView<T: SwatchColor>(
+        _ swatch: T,
         size: CGFloat,
         isSelected: Bool,
         action: @escaping () -> Void
@@ -499,8 +527,8 @@ struct MakePetickerView: View {
                 .fill(swatch.color)
                 .frame(width: size, height: size)
                 .overlay {
-                    // 흰색 스와치는 회색 테두리로 구분
-                    Circle().strokeBorder(Color.black.opacity(swatch == .white ? 0.15 : 0), lineWidth: 1)
+                    // 화면 배경과 구분이 안 되는 밝은 스와치는 회색 테두리로 구분
+                    Circle().strokeBorder(Color.black.opacity(swatch.needsBorder ? 0.15 : 0), lineWidth: 1)
                 }
                 .overlay {
                     if isSelected {
