@@ -46,11 +46,20 @@ enum PaletteColor: CaseIterable, Identifiable {
 /// 스티커의 불투명 픽셀 분포. 사각 바운딩박스가 아니라 실제 그림이 차지하는 범위를 잰다.
 /// 박스 모서리는 대개 투명하므로, 이 값을 쓰면 원 밖으로 나가지 않으면서 훨씬 크게 채울 수 있다.
 struct StickerMetrics {
-    let imageSize: CGSize   // 원본 이미지 크기(pt)
-    let radius: CGFloat     // 이미지 중심에서 가장 먼 불투명 픽셀까지 거리(pt)
-    let topRise: CGFloat    // 이미지 중심에서 가장 위쪽 불투명 픽셀까지 거리(pt)
+    /// 세로 열 하나의 불투명 구간 (이미지 중심 기준, pt)
+    struct Column {
+        let x: CGFloat
+        let minY: CGFloat   // 위쪽 끝 (음수가 위)
+        let maxY: CGFloat   // 아래쪽 끝
+    }
+
+    let imageSize: CGSize    // 원본 이미지 크기(pt)
+    let topRise: CGFloat     // 이미지 중심에서 가장 위쪽 불투명 픽셀까지 거리(pt)
+    let bottomDrop: CGFloat  // 이미지 중심에서 가장 아래쪽 불투명 픽셀까지 거리(pt)
+    let columns: [Column]    // 원 안에 들어가는지 정확히 판정하기 위한 윤곽
 
     /// 알파 채널을 축소본으로 훑어 계산한다. 불투명 픽셀이 없으면 nil.
+    /// 열마다 위·아래 끝만 남긴다 — 원 포함 판정은 각 열의 양 끝만 보면 충분하다.
     static func analyze(_ image: UIImage) -> StickerMetrics? {
         guard let cg = image.cgImage, image.size.width > 0, image.size.height > 0 else { return nil }
 
@@ -73,21 +82,31 @@ struct StickerMetrics {
         let fy = image.size.height / CGFloat(h)
         let centerX = CGFloat(w) / 2, centerY = CGFloat(h) / 2
 
-        var radius: CGFloat = 0
+        var columns: [Column] = []
         var topRise: CGFloat = 0
-        var found = false
+        var bottomDrop: CGFloat = 0
 
-        for y in 0..<h {
-            for x in 0..<w where pixels[(y * w + x) * 4 + 3] > 127 {
-                found = true
-                let dx = (CGFloat(x) + 0.5 - centerX) * fx
-                let dy = (CGFloat(y) + 0.5 - centerY) * fy
-                radius = max(radius, sqrt(dx * dx + dy * dy))
-                topRise = max(topRise, -dy)   // 중심보다 위쪽(dy < 0)인 거리
+        for x in 0..<w {
+            var minRow = h, maxRow = -1
+            for y in 0..<h where pixels[(y * w + x) * 4 + 3] > 127 {
+                minRow = min(minRow, y)
+                maxRow = max(maxRow, y)
             }
+            guard maxRow >= minRow else { continue }
+            let dx = (CGFloat(x) + 0.5 - centerX) * fx
+            let minY = (CGFloat(minRow) + 0.5 - centerY) * fy
+            let maxY = (CGFloat(maxRow) + 0.5 - centerY) * fy
+            columns.append(Column(x: dx, minY: minY, maxY: maxY))
+            topRise = max(topRise, -minY)
+            bottomDrop = max(bottomDrop, maxY)
         }
-        guard found, radius > 0 else { return nil }
-        return StickerMetrics(imageSize: image.size, radius: radius, topRise: topRise)
+        guard !columns.isEmpty, topRise + bottomDrop > 0 else { return nil }
+        return StickerMetrics(
+            imageSize: image.size,
+            topRise: topRise,
+            bottomDrop: bottomDrop,
+            columns: columns
+        )
     }
 }
 
@@ -95,19 +114,19 @@ struct StickerMetrics {
 /// 두 조건을 동시에 만족시킨다.
 ///  1) 상단 배터리 표시 영역을 침범하지 않는다 — 불투명 픽셀은 safeTop 아래에만.
 ///  2) 스티커가 원 밖으로 나가지 않는다 — 모든 불투명 픽셀이 원 안.
-///
-/// 디자인(Figma 139:1602)대로 원 중심에 정렬하고, 위 두 제약이 허락하는 최대 배율로 키운다.
+///  3) 배터리 표시 아래(safeTop)부터 원 바닥까지의 구간에 세로 중앙정렬한다.
+///     (원 중심에 맞추면 위쪽 배터리 여백 탓에 어떤 스티커든 올라가 보인다)
 struct StickerCircleLayout {
     let size: CGSize      // 스티커 프레임 크기
-    let offsetY: CGFloat  // 원 중심 기준 세로 이동량 (원 중심 정렬이므로 0)
+    let offsetY: CGFloat  // 원 중심 기준 세로 이동량
 
     // 원 상단에서 잰, 배터리 표시가 차지하는 영역 (지름 대비 비율).
     // 디자인의 100% 텍스트 하단(0.178d) 아래로 여유를 둔 값.
     // 이 값이 스티커 크기를 좌우한다 — 원 중심 정렬이라 위쪽 여유가 곧 배율 상한이 되기 때문.
     private static let safeTopRatio: CGFloat = 0.20
 
-    // 제약이 허락하는 최대치를 그대로 쓰면 가장자리에 딱 붙어 답답해 보이므로 살짝 줄인다
-    private static let fillRatio: CGFloat = 0.94
+    // 제약이 허락하는 최대치를 그대로 쓰면 가장자리에 딱 붙어 답답해 보이므로 줄인다
+    private static let fillRatio: CGFloat = 0.88
 
     init(diameter d: CGFloat, metrics: StickerMetrics?) {
         let r = d / 2
@@ -118,19 +137,50 @@ struct StickerCircleLayout {
             return
         }
 
-        // 원 안에 들어가도록 하는 배율
-        let byCircle = r / metrics.radius
+        let safeTop = Self.safeTopRatio * d
+        // 배터리 표시 아래(safeTop) ~ 원 바닥 구간의 중앙 (원 중심 기준)
+        let bandCenter = (safeTop + d) / 2 - r
 
-        // 위로 허용되는 거리 — 그림이 배터리 표시를 침범하지 않도록
-        let allowedRise = r - Self.safeTopRatio * d
-        let byTop = metrics.topRise > 0 ? allowedRise / metrics.topRise : .greatestFiniteMagnitude
+        // 배율이 정해지면 위치도 정해진다 — 항상 구간 중앙에 놓는다.
+        // 그림이 위아래로 비대칭일 수 있으므로 프레임이 아니라 불투명 영역의 중심을 맞춘다.
+        func offset(for scale: CGFloat) -> CGFloat {
+            bandCenter - scale * (metrics.bottomDrop - metrics.topRise) / 2
+        }
 
-        let scale = max(0, min(byCircle, byTop)) * Self.fillRatio
+        // 그 위치에서 그림이 원 안에 들어가고 배터리 표시도 안 가리는가.
+        // 열마다 위·아래 끝만 보면 충분하다 (같은 열에서 가장 먼 점은 양 끝 중 하나).
+        func fits(_ scale: CGFloat) -> Bool {
+            let c = offset(for: scale)
+            guard -scale * metrics.topRise + c >= safeTop - r else { return false }
+            let limit = r * r
+            for column in metrics.columns {
+                let x = column.x * scale
+                let top = column.minY * scale + c
+                let bottom = column.maxY * scale + c
+                if x * x + top * top > limit || x * x + bottom * bottom > limit { return false }
+            }
+            return true
+        }
+
+        // 구간 높이를 넘지 않는 선에서 최대 배율을 이분 탐색.
+        // 배율을 줄이면 그림이 작아지고 중앙에 가까워지므로 fits는 단조롭다.
+        var low: CGFloat = 0
+        var high = (d - safeTop) / (metrics.topRise + metrics.bottomDrop)
+        if !fits(high) {
+            for _ in 0..<30 {
+                let mid = (low + high) / 2
+                if fits(mid) { low = mid } else { high = mid }
+            }
+        } else {
+            low = high
+        }
+
+        let scale = low * Self.fillRatio
         self.size = CGSize(
             width: metrics.imageSize.width * scale,
             height: metrics.imageSize.height * scale
         )
-        self.offsetY = 0
+        self.offsetY = offset(for: scale)
     }
 }
 
