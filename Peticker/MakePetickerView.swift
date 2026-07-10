@@ -30,6 +30,53 @@ enum PaletteColor: CaseIterable, Identifiable {
     var contrastColor: Color { self == .black ? .white : .black }
 }
 
+/// 원형 위젯 프리뷰 안에서 스티커가 놓일 자리(크기 + 세로 이동량).
+/// 두 조건을 동시에 만족시킨다.
+///  1) 상단 배터리 영역을 침범하지 않는다 — 박스 위쪽은 safeTop 아래에서 시작.
+///  2) 스티커 박스가 원 밖으로 나가지 않는다 — 네 꼭짓점이 모두 원 안.
+///
+/// 사각 프레임에 그냥 scaledToFit 하면 아래쪽 모서리가 원을 벗어나므로,
+/// 사진 비율(aspectRatio)에 맞춰 원에 내접하는 최대 박스를 구한다.
+struct StickerCircleLayout {
+    let size: CGSize      // 스티커 프레임 크기
+    let offsetY: CGFloat  // 원 중심 기준 세로 이동량
+
+    // 원 상단에서 잰 사진 허용 밴드 (지름 대비 비율)
+    private static let safeTopRatio: CGFloat = 0.24
+    private static let safeBottomRatio: CGFloat = 0.90
+
+    init(diameter d: CGFloat, aspectRatio: CGFloat) {
+        let r = d / 2
+        let a = max(aspectRatio, 0.01)   // 0 나눗셈·비정상 이미지 방어
+
+        // 허용 밴드를 원 중심 기준 좌표로 변환 (위쪽이 음수)
+        let top = Self.safeTopRatio * d - r
+        let bottom = Self.safeBottomRatio * d - r
+        let centerY = (top + bottom) / 2
+        let maxHalfHeight = (bottom - top) / 2
+
+        // 박스를 centerY에 두고 아래쪽 두 꼭짓점이 원에 닿는 최대 크기를 푼다.
+        // (a·hh)² + (centerY + hh)² = r²  →  (a²+1)·hh² + 2·centerY·hh + (centerY² − r²) = 0
+        let k = a * a + 1
+        let discriminant = centerY * centerY + k * (r * r - centerY * centerY)
+        let inscribedHalfHeight = (-centerY + sqrt(max(discriminant, 0))) / k
+
+        // 밴드 높이도 넘지 않게 (여기서 잘리면 박스가 더 작아지므로 원 안쪽은 자동 보장)
+        let halfHeight = min(inscribedHalfHeight, maxHalfHeight)
+
+        self.size = CGSize(width: 2 * a * halfHeight, height: 2 * halfHeight)
+        self.offsetY = centerY
+    }
+}
+
+extension UIImage {
+    // 스티커 배치 계산용 가로/세로 비율 (비정상 크기는 정사각으로 취급)
+    var aspectRatio: CGFloat {
+        guard size.width > 0, size.height > 0 else { return 1 }
+        return size.width / size.height
+    }
+}
+
 // 4단계 — 제작 화면: 누끼·스트로크 처리(Processing) → 완성 후 테두리 색 선택
 struct MakePetickerView: View {
     let onClose: () -> Void
@@ -168,22 +215,18 @@ struct MakePetickerView: View {
 
     // 홈 화면 위젯처럼 보이는 원(배경색은 Background 팔레트) + 스티커
     private func widgetPreview(diameter d: CGFloat) -> some View {
-        // 사진 배치 안전 영역: 상단 배터리 영역을 침범하지 않도록
-        // 세로로 긴 사진도 이 상단선(safeTop) 아래에서만 시작하도록 고정한다.
-        let safeTop: CGFloat = d * 0.24      // 배터리 아래 여백 확보
-        let safeBottom: CGFloat = d * 0.90
-        let photoHeight = safeBottom - safeTop
-        let photoOffsetY = (safeTop + safeBottom) / 2 - d / 2   // 안전 영역 중앙으로 이동
+        // 배터리 영역을 피하면서 원 안에 완전히 들어가는 스티커 자리
+        let layout = StickerCircleLayout(diameter: d, aspectRatio: (sticker ?? currentImage).aspectRatio)
 
         return ZStack {
             Circle()
                 .fill(showChangeButton ? Color(white: 0.55) : selectedBackground.color)
                 .frame(width: d, height: d)
 
-            // 스티커 — 배터리 아래 안전 영역에 배치
+            // 스티커 — 배터리 아래, 원 안쪽에 내접하도록 배치
             stickerImage
-                .frame(width: d * 0.76, height: photoHeight)
-                .offset(y: photoOffsetY)
+                .frame(width: layout.size.width, height: layout.size.height)
+                .offset(y: layout.offsetY)
 
             // 배터리 + 100% — 원 상단 근처 (변경 모드에선 숨김)
             if !showChangeButton {

@@ -55,21 +55,30 @@ struct MainView: View {
                         .overlay {
                             if let savedSticker {
                                 // 완성 상태 — 배터리 100% + 스티커(위젯 미리보기와 동일 구성)
-                                VStack(spacing: 0) {
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "battery.100")
-                                            .font(.system(size: 16))
-                                        Text("100%")
-                                            .font(.system(size: 16, weight: .bold))
+                                let layout = StickerCircleLayout(
+                                    diameter: diameter,
+                                    aspectRatio: savedSticker.aspectRatio
+                                )
+                                ZStack {
+                                    VStack(spacing: 0) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "battery.100")
+                                                .font(.system(size: 16))
+                                            Text("100%")
+                                                .font(.system(size: 16, weight: .bold))
+                                        }
+                                        .foregroundStyle(.primary)
+                                        .padding(.top, diameter * 0.18)
+                                        Spacer()
                                     }
-                                    .foregroundStyle(.primary)
-                                    .padding(.top, diameter * 0.18)
+                                    // 배터리 아래, 원 안쪽에 내접하도록 배치
                                     Image(uiImage: savedSticker)
                                         .resizable()
                                         .scaledToFit()
-                                        .padding(.horizontal, diameter * 0.12)
-                                        .padding(.bottom, diameter * 0.06)
+                                        .frame(width: layout.size.width, height: layout.size.height)
+                                        .offset(y: layout.offsetY)
                                 }
+                                .frame(width: diameter, height: diameter)
                             } else {
                                 Image("PlusIcon")
                                     .resizable()
