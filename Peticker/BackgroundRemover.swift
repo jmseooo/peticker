@@ -67,13 +67,14 @@ enum BackgroundRemover {
         ))
     }
 
-    /// Vision 마스크(회색조)를 펜으로 그린 듯 또렷한 실루엣으로 다듬는다.
-    /// 반투명 경계를 없애고, 잡티·가시를 정리한 뒤, 계단만 살짝 풀어준다.
+    /// Vision 마스크(회색조)를 펜으로 그린 듯 또렷하고 매끄러운 실루엣으로 다듬는다.
+    /// 반투명 경계를 없애고, 잡티·가시를 지우고, 털·배경 때문에 생긴 잔 요철을 펴준다.
     private static func cleanedMask(_ mask: CIImage) -> CIImage {
         let extent = mask.extent
         let unit = max(extent.width, extent.height)
-        let speck = max(1, (unit * 0.004).rounded())          // 지워낼 잡티·가시 크기
-        let antialias = max(1, unit * 0.0015)                 // 계단만 풀 정도의 아주 약한 흐림
+        let speck = max(1, (unit * 0.006).rounded())   // 지워낼 잡티·가시 크기
+        let smoothing = max(2, unit * 0.016)           // 이보다 잔 요철은 펴짐 (털 끝이 약간 깎임)
+        let antialias = max(0.8, unit * 0.0012)        // 계단만 풀 정도의 아주 약한 흐림
 
         // 1) 이진화 — Vision 마스크의 반투명 경계(뿌연 원인)를 잘라낸다
         let binary = contrast(mask, 24)
@@ -88,13 +89,22 @@ enum BackgroundRemover {
             .applyingFilter("CIMorphologyMaximum", parameters: [kCIInputRadiusKey: speck])
             .applyingFilter("CIMorphologyMinimum", parameters: [kCIInputRadiusKey: speck])
 
-        // 4) 살짝 흐린 뒤 다시 대비를 세운다 — 계단(각짐)만 사라지고 선은 또렷하게 남는다
-        let smoothed = closed
-            .clampedToExtent()
-            .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: antialias])
-            .cropped(to: extent)
+        // 4) 윤곽 매끄럽게 — 크게 흐린 뒤 0.5에서 하드 컷.
+        //    흐림 반경보다 잔 요철(털·배경 노이즈)이 통째로 사라지고 곡선만 남는다.
+        //    반경을 줄여 한 번 더 반복하면 굵은 결까지 정리된다.
+        let coarse = contrast(blurred(closed, radius: smoothing, extent: extent), 40)
+        let contour = contrast(blurred(coarse, radius: smoothing * 0.5, extent: extent), 40)
 
-        return contrast(smoothed, 8)
+        // 5) 마지막으로 계단만 살짝 풀어 안티에일리어싱 (선명함은 유지)
+        return contrast(blurred(contour, radius: antialias, extent: extent), 6)
+    }
+
+    // 경계 바깥이 어두워지지 않도록 가장자리를 늘려 흐린 뒤 원래 크기로 자른다
+    private static func blurred(_ image: CIImage, radius: CGFloat, extent: CGRect) -> CIImage {
+        image
+            .clampedToExtent()
+            .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: radius])
+            .cropped(to: extent)
     }
 
     // 0.5를 기준으로 대비를 세워 이진화에 가깝게 만든다 (채도는 없앰)
