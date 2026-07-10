@@ -25,6 +25,7 @@
 		BB0001000000000000000012 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000012 /* SharedStore.swift */; };
 		BB0002000000000000000001 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000012 /* SharedStore.swift */; };
 		BB0002000000000000000002 /* PetickerWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000001 /* PetickerWidgetBundle.swift */; };
+		BB0002000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000007 /* Assets.xcassets */; };
 		BB0002000000000000000003 /* PetickerWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000002 /* PetickerWidget.swift */; };
 		BB0002000000000000000004 /* PetickerWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000006 /* PetickerWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -50,6 +51,7 @@
 		AA0002000000000000000001 /* PetickerWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetickerWidgetBundle.swift; sourceTree = "<group>"; };
 		AA0002000000000000000002 /* PetickerWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetickerWidget.swift; sourceTree = "<group>"; };
 		AA0002000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA0002000000000000000007 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA0002000000000000000004 /* PetickerWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PetickerWidget.entitlements; sourceTree = "<group>"; };
 		AA0002000000000000000005 /* Peticker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Peticker.entitlements; sourceTree = "<group>"; };
 		AA0002000000000000000006 /* PetickerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PetickerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -144,6 +146,7 @@
 				AA0002000000000000000002 /* PetickerWidget.swift */,
 				AA0002000000000000000003 /* Info.plist */,
 				AA0002000000000000000004 /* PetickerWidget.entitlements */,
+				AA0002000000000000000007 /* Assets.xcassets */,
 			);
 			path = PetickerWidget;
 			sourceTree = "<group>";
@@ -238,6 +241,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB0002000000000000000005 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

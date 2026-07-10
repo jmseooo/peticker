@@ -73,15 +73,18 @@ struct PetickerWidgetEntryView: View {
                         .padding(.top, geo.size.height * 0.24)
                         .padding([.horizontal, .bottom], 6)
                 } else {
-                    // 아직 스티커를 만들지 않은 경우 안내
-                    VStack(spacing: 6) {
-                        Image(systemName: "pawprint.fill")
-                            .font(.system(size: 24))
+                    // 아직 스티커를 만들지 않은 경우 — 로고 + 안내
+                    VStack(spacing: 8) {
+                        Image("StickieLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: geo.size.width * 0.62)
                         Text("앱에서 스티커를\n만들어 주세요")
                             .font(.system(size: 11, weight: .semibold))
                             .multilineTextAlignment(.center)
+                            // 배경색에 따라 흑백이 뒤집히도록 (로고는 원색 유지)
+                            .foregroundStyle(entry.foreground.opacity(0.7))
                     }
-                    .foregroundStyle(.secondary)
                     .padding(.top, geo.size.height * 0.12)
                 }
             }
