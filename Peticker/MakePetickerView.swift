@@ -43,50 +43,111 @@ enum PaletteColor: CaseIterable, Identifiable {
     }
 }
 
+/// 스티커의 불투명 픽셀 분포. 사각 바운딩박스가 아니라 실제 그림이 차지하는 범위를 잰다.
+/// 박스 모서리는 대개 투명하므로, 이 값을 쓰면 원 밖으로 나가지 않으면서 훨씬 크게 채울 수 있다.
+struct StickerMetrics {
+    let imageSize: CGSize    // 원본 이미지 크기(pt)
+    let radius: CGFloat      // 이미지 중심에서 가장 먼 불투명 픽셀까지 거리(pt)
+    let topRise: CGFloat     // 이미지 중심에서 가장 위쪽 불투명 픽셀까지 거리(pt)
+    let bottomDrop: CGFloat  // 이미지 중심에서 가장 아래쪽 불투명 픽셀까지 거리(pt)
+
+    /// 알파 채널을 축소본으로 훑어 계산한다. 불투명 픽셀이 없으면 nil.
+    static func analyze(_ image: UIImage) -> StickerMetrics? {
+        guard let cg = image.cgImage, image.size.width > 0, image.size.height > 0 else { return nil }
+
+        let scale = min(1, 128 / CGFloat(max(cg.width, cg.height)))
+        let w = max(1, Int((CGFloat(cg.width) * scale).rounded()))
+        let h = max(1, Int((CGFloat(cg.height) * scale).rounded()))
+
+        var pixels = [UInt8](repeating: 0, count: w * h * 4)
+        guard let ctx = CGContext(
+            data: &pixels,
+            width: w, height: h,
+            bitsPerComponent: 8, bytesPerRow: w * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+
+        // 축소본 픽셀 거리를 원본 pt로 되돌리는 배율
+        let fx = image.size.width / CGFloat(w)
+        let fy = image.size.height / CGFloat(h)
+        let centerX = CGFloat(w) / 2, centerY = CGFloat(h) / 2
+
+        var radius: CGFloat = 0
+        var topRise: CGFloat = 0
+        var bottomDrop: CGFloat = 0
+        var found = false
+
+        for y in 0..<h {
+            for x in 0..<w where pixels[(y * w + x) * 4 + 3] > 127 {
+                found = true
+                let dx = (CGFloat(x) + 0.5 - centerX) * fx
+                let dy = (CGFloat(y) + 0.5 - centerY) * fy
+                radius = max(radius, sqrt(dx * dx + dy * dy))
+                topRise = max(topRise, -dy)     // 중심보다 위쪽(dy < 0)인 거리
+                bottomDrop = max(bottomDrop, dy) // 중심보다 아래쪽(dy > 0)인 거리
+            }
+        }
+        guard found, radius > 0 else { return nil }
+        return StickerMetrics(
+            imageSize: image.size,
+            radius: radius,
+            topRise: topRise,
+            bottomDrop: bottomDrop
+        )
+    }
+}
+
 /// 원형 위젯 프리뷰 안에서 스티커가 놓일 자리(크기 + 세로 이동량).
-/// 두 조건을 동시에 만족시킨다.
-///  1) 상단 100% 표시 영역을 침범하지 않는다 — 박스 위쪽은 safeTop 아래에서 시작.
-///  2) 스티커 박스가 원 밖으로 나가지 않는다 — 네 꼭짓점이 모두 원 안.
-///
-/// 사각 프레임에 그냥 scaledToFit 하면 아래쪽 모서리가 원을 벗어나므로,
-/// 사진 비율(aspectRatio)에 맞춰 원에 내접하는 최대 박스를 구한다.
+/// 세 조건을 동시에 만족시킨다.
+///  1) 상단 배터리 표시 영역을 침범하지 않는다 — 불투명 픽셀은 safeTop 아래에만.
+///  2) 스티커가 원 밖으로 나가지 않는다 — 모든 불투명 픽셀이 원 안.
+///  3) 배터리 표시 아래부터 원 바닥까지의 구간에 세로 중앙정렬한다.
+///     (원 중심에 맞추면 위쪽에 배터리 여백이 있어 스티커가 올라가 보인다)
 struct StickerCircleLayout {
     let size: CGSize      // 스티커 프레임 크기
     let offsetY: CGFloat  // 원 중심 기준 세로 이동량
 
-    // 원 상단에서 잰 사진 허용 밴드 (지름 대비 비율)
-    private static let safeTopRatio: CGFloat = 0.24
-    private static let safeBottomRatio: CGFloat = 0.90
+    // 원 상단에서 잰, 배터리 표시가 차지하는 영역 (지름 대비 비율).
+    // 이 값이 스티커 크기를 좌우한다 — 위쪽 여유가 곧 배율 상한이 되기 때문.
+    private static let safeTopRatio: CGFloat = 0.13
 
-    init(diameter d: CGFloat, aspectRatio: CGFloat) {
+    // 제약이 허락하는 최대치를 그대로 쓰면 가장자리에 딱 붙어 답답해 보이므로 살짝 줄인다
+    private static let fillRatio: CGFloat = 0.94
+
+    init(diameter d: CGFloat, metrics: StickerMetrics?) {
         let r = d / 2
-        let a = max(aspectRatio, 0.01)   // 0 나눗셈·비정상 이미지 방어
+        guard let metrics else {
+            // 알파를 못 읽은 경우: 원에 확실히 들어가는 보수적인 정사각 크기
+            self.size = CGSize(width: r, height: r)
+            self.offsetY = 0
+            return
+        }
 
-        // 허용 밴드를 원 중심 기준 좌표로 변환 (위쪽이 음수)
-        let top = Self.safeTopRatio * d - r
-        let bottom = Self.safeBottomRatio * d - r
-        let centerY = (top + bottom) / 2
-        let maxHalfHeight = (bottom - top) / 2
+        // 원 안에 들어가도록 하는 배율
+        let byCircle = r / metrics.radius
 
-        // 박스를 centerY에 두고 아래쪽 두 꼭짓점이 원에 닿는 최대 크기를 푼다.
-        // (a·hh)² + (centerY + hh)² = r²  →  (a²+1)·hh² + 2·centerY·hh + (centerY² − r²) = 0
-        let k = a * a + 1
-        let discriminant = centerY * centerY + k * (r * r - centerY * centerY)
-        let inscribedHalfHeight = (-centerY + sqrt(max(discriminant, 0))) / k
+        // 위로 허용되는 거리 — 그림이 배터리 표시를 침범하지 않도록
+        let allowedRise = r - Self.safeTopRatio * d
+        let byTop = metrics.topRise > 0 ? allowedRise / metrics.topRise : .greatestFiniteMagnitude
 
-        // 밴드 높이도 넘지 않게 (여기서 잘리면 박스가 더 작아지므로 원 안쪽은 자동 보장)
-        let halfHeight = min(inscribedHalfHeight, maxHalfHeight)
+        let scale = max(0, min(byCircle, byTop)) * Self.fillRatio
+        self.size = CGSize(
+            width: metrics.imageSize.width * scale,
+            height: metrics.imageSize.height * scale
+        )
 
-        self.size = CGSize(width: 2 * a * halfHeight, height: 2 * halfHeight)
-        self.offsetY = centerY
-    }
-}
+        // 배터리 표시 아래(safeTop) ~ 원 바닥 구간의 중앙 (원 중심 기준)
+        let bandCenter = (Self.safeTopRatio * d + d) / 2 - r
 
-extension UIImage {
-    // 스티커 배치 계산용 가로/세로 비율 (비정상 크기는 정사각으로 취급)
-    var aspectRatio: CGFloat {
-        guard size.width > 0, size.height > 0 else { return 1 }
-        return size.width / size.height
+        // 그림이 위아래로 비대칭일 수 있으므로, 프레임이 아니라 불투명 영역의 중심을 맞춘다
+        let contentCenter = scale * (metrics.bottomDrop - metrics.topRise) / 2
+        let desired = bandCenter - contentCenter
+
+        // 내려놓다가 원 밖으로 밀려나지 않도록 이동량을 제한한다
+        let limit = max(0, r - scale * metrics.radius)
+        self.offsetY = min(max(desired, -limit), limit)
     }
 }
 
@@ -97,6 +158,7 @@ struct MakePetickerView: View {
     @State private var currentImage: UIImage         // 현재 처리 대상 원본(사진 변경 시 교체)
     @State private var cutout: UIImage?              // 누끼 결과(테두리 없음)
     @State private var sticker: UIImage?             // 현재 색 테두리 적용 결과
+    @State private var metrics: StickerMetrics?      // 스티커 배치용 불투명 픽셀 분포(캐시)
     @State private var selectedStroke: PaletteColor = .cyan      // 스티커 테두리 색
     @State private var selectedBackground: PaletteColor          // 위젯 배경색
     @State private var isProcessing = true
@@ -230,8 +292,8 @@ struct MakePetickerView: View {
 
     // 홈 화면 위젯처럼 보이는 원(배경색은 Background 팔레트) + 스티커
     private func widgetPreview(diameter d: CGFloat) -> some View {
-        // 상단 배터리 표시를 피하면서 원 안에 완전히 들어가는 스티커 자리
-        let layout = StickerCircleLayout(diameter: d, aspectRatio: (sticker ?? currentImage).aspectRatio)
+        // 상단 배터리 표시를 피하면서 원 안에 완전히 들어가는, 중앙정렬 최대 크기
+        let layout = StickerCircleLayout(diameter: d, metrics: metrics)
 
         return ZStack {
             Circle()
@@ -250,7 +312,7 @@ struct MakePetickerView: View {
                         .font(.system(size: 15, weight: .bold))
                         // 검정 배경에서도 보이도록 대비색 사용
                         .foregroundStyle(selectedBackground.contrastColor)
-                        .padding(.top, d * 0.14)
+                        .padding(.top, d * 0.06)
                     Spacer()
                 }
                 .frame(width: d, height: d)
@@ -395,7 +457,10 @@ struct MakePetickerView: View {
     // 현재 선택된 색으로 테두리 다시 입힘 (누끼 결과 재사용 — 빠름)
     private func restroke() async {
         guard let cutout else { return }
-        sticker = await StickerStyler.addStroke(to: cutout, color: selectedStroke.uiColor)
+        let restroked = await StickerStyler.addStroke(to: cutout, color: selectedStroke.uiColor)
+        sticker = restroked
+        // 테두리가 붙으면 불투명 영역이 넓어지므로 배치를 다시 잰다
+        metrics = restroked.flatMap(StickerMetrics.analyze)
     }
 
     // DONE — 배경색과 완성 스티커를 공유 저장소에 저장(위젯이 읽어 표시)한 뒤 화면 닫기

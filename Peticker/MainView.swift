@@ -9,12 +9,14 @@ struct MainView: View {
     @State private var pickedPhoto: PickedPhoto?
     @State private var isLoadingPhoto = false
     @State private var savedSticker: UIImage?   // 완성 후 청록 원에 표시할 스티커(위젯과 동일 결과)
+    @State private var stickerMetrics: StickerMetrics?   // 스티커 배치용 불투명 픽셀 분포(캐시)
     @State private var widgetBackground: Color = .white   // 제작 화면에서 고른 위젯 배경색
     @State private var widgetForeground: Color = .black   // 그 위에 얹는 배터리 표시 색
 
     // 저장된 스티커와 배경색을 함께 읽어 미리보기를 위젯과 같은 모습으로 맞춘다
     private func reloadWidgetPreview() {
         savedSticker = SharedStore.loadSticker()
+        stickerMetrics = savedSticker.flatMap(StickerMetrics.analyze)
         let colors = SharedStore.widgetColors()
         widgetBackground = colors.background
         widgetForeground = colors.foreground
@@ -67,14 +69,14 @@ struct MainView: View {
                                 // 완성 상태 — 배터리 퍼센트 + 스티커(위젯 미리보기와 동일 구성)
                                 let layout = StickerCircleLayout(
                                     diameter: diameter,
-                                    aspectRatio: savedSticker.aspectRatio
+                                    metrics: stickerMetrics
                                 )
                                 ZStack {
                                     VStack(spacing: 0) {
                                         Text("\(BatteryMonitor.shared.percent)%")
                                             .font(.system(size: 16, weight: .bold))
                                             .foregroundStyle(widgetForeground)
-                                            .padding(.top, diameter * 0.18)
+                                            .padding(.top, diameter * 0.05)
                                         Spacer()
                                     }
                                     // 배터리 표시 아래, 원 안쪽에 내접하도록 배치
