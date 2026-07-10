@@ -14,6 +14,14 @@ enum SharedStore {
 
     private static let stickerFileName = "sticker.png"
 
+    // 위젯 배경색 — sRGB [r, g, b, a] 4요소로 저장.
+    // 색상값을 직접 저장해 위젯 타겟이 앱의 Color 확장(Colors.swift)에 의존하지 않게 한다.
+    private static let backgroundColorKey = "widgetBackgroundColorRGBA"
+
+    private static var defaults: UserDefaults? {
+        UserDefaults(suiteName: appGroupID)
+    }
+
     // App Group 공유 컨테이너 루트
     static var containerURL: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
@@ -39,6 +47,22 @@ enum SharedStore {
         } catch {
             return false
         }
+    }
+
+    /// 위젯 배경색을 저장하고 위젯 갱신을 요청.
+    static func saveBackgroundColor(_ color: UIColor) {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard color.getRed(&r, green: &g, blue: &b, alpha: &a) else { return }
+        defaults?.set([Double(r), Double(g), Double(b), Double(a)], forKey: backgroundColorKey)
+        WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
+    }
+
+    /// 저장된 위젯 배경색(sRGB). 아직 고른 적 없으면 nil — 호출부에서 흰색으로 대체한다.
+    static func backgroundColorRGBA() -> (red: Double, green: Double, blue: Double, alpha: Double)? {
+        guard let v = defaults?.array(forKey: backgroundColorKey) as? [Double], v.count == 4 else {
+            return nil
+        }
+        return (v[0], v[1], v[2], v[3])
     }
 
     /// 위젯에서 사용 — 저장된 스티커를 ImageIO로 다운샘플링해 작은 PNG 데이터로 반환.

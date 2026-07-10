@@ -7,8 +7,8 @@ struct PickedPhoto: Identifiable {
     let image: UIImage
 }
 
-// 테두리 색 팔레트 (Figma 55:1696 하단 6색)
-enum StrokeColor: CaseIterable, Identifiable {
+// 색 팔레트 (Figma 55:1696 하단 6색) — Background·Outline 두 행이 함께 사용
+enum PaletteColor: CaseIterable, Identifiable {
     case pink, lime, cyan, yellow, white, black
 
     var id: Self { self }
@@ -26,8 +26,8 @@ enum StrokeColor: CaseIterable, Identifiable {
 
     var uiColor: UIColor { UIColor(color) }
 
-    // 선택 표시(체크) 색 — 검정 위엔 흰색, 그 외엔 검정
-    var checkColor: Color { self == .black ? .white : .black }
+    // 이 색 위에 얹는 전경색(체크 표시·배터리 텍스트) — 검정 위엔 흰색, 그 외엔 검정
+    var contrastColor: Color { self == .black ? .white : .black }
 }
 
 // 4단계 — 제작 화면: 누끼·스트로크 처리(Processing) → 완성 후 테두리 색 선택
@@ -37,7 +37,8 @@ struct MakePetickerView: View {
     @State private var currentImage: UIImage         // 현재 처리 대상 원본(사진 변경 시 교체)
     @State private var cutout: UIImage?              // 누끼 결과(테두리 없음)
     @State private var sticker: UIImage?             // 현재 색 테두리 적용 결과
-    @State private var selectedColor: StrokeColor = .cyan
+    @State private var selectedStroke: PaletteColor = .cyan     // 스티커 테두리 색
+    @State private var selectedBackground: PaletteColor = .white // 위젯 배경색
     @State private var isProcessing = true
     @State private var showChangeButton = false      // 원 탭 시 딤 + Change 버튼 표시
     @State private var pickerItem: PhotosPickerItem? // 사진 다시 고르기
@@ -157,22 +158,15 @@ struct MakePetickerView: View {
             widgetPreview(diameter: diameter)
             Spacer(minLength: 16)
             palette(width: size.width)
-            Spacer().frame(height: min(44, size.height * 0.06))
-            Button(action: saveAndClose) {   // 완성 스티커를 공유 저장소에 저장 → 위젯 표시
-                Text("DONE")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 14)
-                    .contentShape(Rectangle())
-            }
+            Spacer().frame(height: min(42, size.height * 0.06))   // 디자인: Outline 행 ↔ DONE 42
+            doneButton
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.top, size.height * 0.09)   // 상단 바 아래 여백
         .padding(.bottom, 24)
     }
 
-    // 홈 화면 위젯처럼 보이는 흰 원 + 스티커
+    // 홈 화면 위젯처럼 보이는 원(배경색은 Background 팔레트) + 스티커
     private func widgetPreview(diameter d: CGFloat) -> some View {
         // 사진 배치 안전 영역: 상단 배터리 영역을 침범하지 않도록
         // 세로로 긴 사진도 이 상단선(safeTop) 아래에서만 시작하도록 고정한다.
@@ -183,7 +177,7 @@ struct MakePetickerView: View {
 
         return ZStack {
             Circle()
-                .fill(showChangeButton ? Color(white: 0.55) : .white)
+                .fill(showChangeButton ? Color(white: 0.55) : selectedBackground.color)
                 .frame(width: d, height: d)
 
             // 스티커 — 배터리 아래 안전 영역에 배치
@@ -200,7 +194,8 @@ struct MakePetickerView: View {
                         Text("100%")
                             .font(.system(size: 15, weight: .bold))
                     }
-                    .foregroundStyle(.black)
+                    // 검정 배경에서도 배터리·100%가 보이도록 대비색 사용
+                    .foregroundStyle(selectedBackground.contrastColor)
                     .padding(.top, d * 0.14)
                     Spacer()
                 }
@@ -253,26 +248,62 @@ struct MakePetickerView: View {
         }
     }
 
+    // MARK: - 팔레트 (Figma 55:1696 — Background / Outline 두 행)
+
+    private let paletteInset: CGFloat = 24      // 좌우 여백
+    private let swatchSpacing: CGFloat = 12.6   // (327 - 44*6) / 5
+    private let maxSwatchSize: CGFloat = 44
+
     private func palette(width: CGFloat) -> some View {
-        let inset: CGFloat = 20
-        let spacing: CGFloat = 12
-        let n = CGFloat(StrokeColor.allCases.count)
+        let n = CGFloat(PaletteColor.allCases.count)
         // 사용 가능한 폭에 맞춰 스와치 크기 조정(좁은 기기에서 잘리지 않도록), 최대 44
-        let swatchSize = min(44, (width - inset * 2 - spacing * (n - 1)) / n)
-        return HStack(spacing: spacing) {
-            ForEach(StrokeColor.allCases) { swatch in
-                swatchView(swatch, size: swatchSize)
+        let size = min(maxSwatchSize, (width - paletteInset * 2 - swatchSpacing * (n - 1)) / n)
+        return VStack(alignment: .leading, spacing: 0) {
+            paletteLabel("Background")
+            Spacer().frame(height: 7)
+            swatchRow(size: size, selection: selectedBackground) { picked in
+                selectedBackground = picked   // 위젯 배경색 — 재합성 불필요
+            }
+            Spacer().frame(height: 17)
+            paletteLabel("Outline")
+            Spacer().frame(height: 7)
+            swatchRow(size: size, selection: selectedStroke) { picked in
+                selectedStroke = picked
+                Task { await restroke() }
             }
         }
-        .padding(.horizontal, inset)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, paletteInset)
     }
 
-    private func swatchView(_ swatch: StrokeColor, size: CGFloat) -> some View {
-        let isSelected = swatch == selectedColor
-        return Button {
-            selectedColor = swatch
-            Task { await restroke() }
-        } label: {
+    private func paletteLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 12, weight: .medium))
+            .tracking(-0.5)
+            .foregroundStyle(.black)
+    }
+
+    private func swatchRow(
+        size: CGFloat,
+        selection: PaletteColor,
+        onPick: @escaping (PaletteColor) -> Void
+    ) -> some View {
+        HStack(spacing: swatchSpacing) {
+            ForEach(PaletteColor.allCases) { swatch in
+                swatchView(swatch, size: size, isSelected: swatch == selection) {
+                    onPick(swatch)
+                }
+            }
+        }
+    }
+
+    private func swatchView(
+        _ swatch: PaletteColor,
+        size: CGFloat,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
             Circle()
                 .fill(swatch.color)
                 .frame(width: size, height: size)
@@ -287,9 +318,22 @@ struct MakePetickerView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: size * 0.5, height: size * 0.5)
-                            .foregroundStyle(swatch.checkColor)
+                            .foregroundStyle(swatch.contrastColor)
                     }
                 }
+        }
+        .buttonStyle(.plain)
+    }
+
+    // DONE — 140x48 캡슐, 1pt 검정 테두리 (Figma 119:1802)
+    private var doneButton: some View {
+        Button(action: saveAndClose) {
+            Text("DONE")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(.black)
+                .frame(width: 140, height: 48)
+                .overlay { Capsule().stroke(Color.black, lineWidth: 1) }
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -297,11 +341,12 @@ struct MakePetickerView: View {
     // 현재 선택된 색으로 테두리 다시 입힘 (누끼 결과 재사용 — 빠름)
     private func restroke() async {
         guard let cutout else { return }
-        sticker = await StickerStyler.addStroke(to: cutout, color: selectedColor.uiColor)
+        sticker = await StickerStyler.addStroke(to: cutout, color: selectedStroke.uiColor)
     }
 
-    // DONE — 완성된 스티커를 공유 저장소에 저장(위젯이 읽어 표시)한 뒤 화면 닫기
+    // DONE — 배경색과 완성 스티커를 공유 저장소에 저장(위젯이 읽어 표시)한 뒤 화면 닫기
     private func saveAndClose() {
+        SharedStore.saveBackgroundColor(selectedBackground.uiColor)
         if let sticker {
             SharedStore.saveSticker(sticker)
         }
