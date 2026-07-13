@@ -110,7 +110,7 @@ struct MainView: View {
                     Image("StickieLogo")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 38)
+                        .frame(width: 153, height: 24)
                         .position(x: w / 2, y: 30)
 
                     // 핑크 잠금 슬롯 — 좌상단

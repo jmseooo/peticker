@@ -13,7 +13,7 @@ struct OnboardingView: View {
                     Image("StickieLogo")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 44)
+                        .frame(width: 153, height: 24)
                         .padding(.top, 35)
                         .padding(.bottom, 16)
 
