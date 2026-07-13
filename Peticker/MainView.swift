@@ -163,6 +163,20 @@ struct MainView: View {
                 }
             }
         }
+        // 설정 아이콘 — 우하단 (오른쪽 35, 아래 40)
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                showComingSoon = true   // TODO: 설정 화면 연결
+            } label: {
+                Image("SettingsIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 29, height: 29)
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 35)
+            .padding(.bottom, 40)
+        }
         .overlay {
             if showComingSoon {
                 ComingSoonOverlay { showComingSoon = false }
