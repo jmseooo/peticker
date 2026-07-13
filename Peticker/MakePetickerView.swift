@@ -277,7 +277,6 @@ struct MakePetickerView: View {
     @State private var selectedStroke: OutlineColor               // 스티커 테두리 색
     @State private var selectedBackground: BackgroundColor        // 위젯 배경색
     @State private var isProcessing = true
-    @State private var pickerItem: PhotosPickerItem? // 사진 다시 고르기
 
     // 스티커 배치 — 핀치(크기)·드래그(위치). 원 밖은 클리핑된다.
     @State private var placement: StickerPlacement?  // nil이면 아직 자동 배치 미확정
@@ -317,19 +316,6 @@ struct MakePetickerView: View {
         .background(Color.bgBase.ignoresSafeArea())
         .task {
             await processImage()
-        }
-        .onChange(of: pickerItem) { _, newItem in
-            guard let newItem else { return }
-            Task {
-                guard let data = try? await newItem.loadTransferable(type: Data.self),
-                      let uiImage = UIImage(data: data) else { return }
-                await MainActor.run {
-                    currentImage = uiImage
-                    placement = nil   // 새 피사체이므로 자동 배치로 다시 정한다
-                    withAnimation(.easeOut(duration: 0.2)) { isProcessing = true }
-                }
-                await processImage()
-            }
         }
     }
 
@@ -476,9 +462,6 @@ struct MakePetickerView: View {
             }
             .frame(width: d, height: d)
             .allowsHitTesting(false)   // 배터리 위에서도 스티커를 잡을 수 있게
-
-            // 사진 교체 버튼 — 우상단
-            changeButton(diameter: d)
         }
         .frame(width: d, height: d)
     }
@@ -503,25 +486,6 @@ struct MakePetickerView: View {
                 placement = base.clamped
             }
         return magnify.simultaneously(with: drag)
-    }
-
-    // 우상단 사진 교체 버튼 (원 안은 스티커 드래그에 쓰이므로 별도 버튼으로 분리)
-    private func changeButton(diameter d: CGFloat) -> some View {
-        VStack {
-            HStack {
-                Spacer()
-                PhotosPicker(selection: $pickerItem, matching: .images) {
-                    Image(systemName: "photo")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 34, height: 34)
-                        .background(Color.black.opacity(0.35), in: Circle())
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer()
-        }
-        .frame(width: d, height: d)
     }
 
     private var stickerImage: some View {
