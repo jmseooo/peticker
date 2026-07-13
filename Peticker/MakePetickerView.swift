@@ -615,10 +615,13 @@ struct MakePetickerView: View {
                 showPhotoPicker = true
             } label: {
                 VStack(spacing: 8) {
-                    Image(systemName: "photo")
-                        .font(.system(size: 22, weight: .bold))
                     Text("Change")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 20, weight: .bold))
+                    Image("ChangeIcon")
+                        .renderingMode(.template)   // 흰색 픽셀 화살표 틴트
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
                 }
                 .foregroundStyle(.white)
             }
