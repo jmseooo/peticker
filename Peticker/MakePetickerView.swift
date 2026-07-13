@@ -11,9 +11,12 @@ struct PickedPhoto: Identifiable {
 // 스와치 한 칸이 갖춰야 할 것 — Background·Outline 두 행이 같은 UI를 공유한다
 protocol SwatchColor: CaseIterable, Identifiable, Equatable where AllCases: RandomAccessCollection {
     var hex: String { get }
+    var isNone: Bool { get }   // '선 없음' 스와치 (색 대신 대각선 아이콘)
 }
 
 extension SwatchColor {
+    var isNone: Bool { false }
+
     var id: String { hex }
 
     var color: Color { Color(hex: hex) }
@@ -61,7 +64,7 @@ enum BackgroundColor: String, SwatchColor {
     static func saved() -> BackgroundColor? { matching(SharedStore.backgroundColorRGBA()) }
 }
 
-// 스티커 테두리 색 팔레트
+// 스티커 테두리 색 팔레트. none은 테두리 없음.
 enum OutlineColor: String, SwatchColor {
     case pink   = "FF2DA0"
     case lime   = "CAFF39"
@@ -69,10 +72,15 @@ enum OutlineColor: String, SwatchColor {
     case yellow = "F5E63D"
     case white  = "FFFFFF"
     case black  = "000000"
+    case none   = "none"
 
-    var hex: String { rawValue }
+    var hex: String { rawValue }             // none은 "none" → 흰색으로 폴백(대각선 아이콘이 덮음)
+    var isNone: Bool { self == .none }
 
-    static func saved() -> OutlineColor? { matching(SharedStore.outlineColorRGBA()) }
+    // 색 이름(rawValue)으로 저장·복원. none도 그대로 저장된다.
+    static func saved() -> OutlineColor? {
+        SharedStore.outlineName().flatMap(OutlineColor.init(rawValue:))
+    }
 }
 
 /// 스티커의 불투명 픽셀 분포. 사각 바운딩박스가 아니라 실제 그림이 차지하는 범위를 잰다.
@@ -505,28 +513,31 @@ struct MakePetickerView: View {
     private let swatchSpacing: CGFloat = 12.6   // (327 - 44*6) / 5
     private let maxSwatchSize: CGFloat = 44
 
-    // 사용 가능한 폭에 맞춰 스와치 크기 조정(좁은 기기에서 잘리지 않도록), 최대 44.
-    // 두 행의 스와치 개수는 같다.
+    // 스와치 크기 — 6개가 폭에 딱 맞는 크기(최대 44). 개수와 무관하게 고정이라
+    // 7개 이상인 행은 가로 스크롤된다.
     private func swatchSize(width: CGFloat) -> CGFloat {
-        let n = CGFloat(BackgroundColor.allCases.count)
+        let n: CGFloat = 6
         return min(maxSwatchSize, (width - paletteInset * 2 - swatchSpacing * (n - 1)) / n)
     }
 
     // 라벨 17 + 7 + 스와치 행 + 17 + 라벨 17 + 7 + 스와치 행
     private func paletteHeight(width: CGFloat) -> CGFloat {
-        17 + 7 + swatchSize(width: width) + 17 + 17 + 7 + swatchSize(width: width)
+        let size = swatchSize(width: width)
+        return 17 + 7 + size + 17 + 17 + 7 + size
     }
 
     private func palette(width: CGFloat) -> some View {
         let size = swatchSize(width: width)
         return VStack(alignment: .leading, spacing: 0) {
             paletteLabel("Background")
+                .padding(.horizontal, paletteInset)
             Spacer().frame(height: 7)
             swatchRow(size: size, selection: selectedBackground) { picked in
                 selectedBackground = picked   // 위젯 배경색 — 재합성 불필요
             }
             Spacer().frame(height: 17)
             paletteLabel("Outline")
+                .padding(.horizontal, paletteInset)
             Spacer().frame(height: 7)
             swatchRow(size: size, selection: selectedStroke) { picked in
                 selectedStroke = picked
@@ -534,7 +545,6 @@ struct MakePetickerView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, paletteInset)
     }
 
     private func paletteLabel(_ text: String) -> some View {
@@ -544,18 +554,23 @@ struct MakePetickerView: View {
             .foregroundStyle(.black)
     }
 
+    // 스와치를 원래 크기로 유지하고, 넘치면 가로 스크롤 (스크롤 표시줄 숨김).
     private func swatchRow<T: SwatchColor>(
         size: CGFloat,
         selection: T,
         onPick: @escaping (T) -> Void
     ) -> some View {
-        HStack(spacing: swatchSpacing) {
-            ForEach(T.allCases) { swatch in
-                swatchView(swatch, size: size, isSelected: swatch == selection) {
-                    onPick(swatch)
+        ScrollView(.horizontal) {
+            HStack(spacing: swatchSpacing) {
+                ForEach(T.allCases) { swatch in
+                    swatchView(swatch, size: size, isSelected: swatch == selection) {
+                        onPick(swatch)
+                    }
                 }
             }
+            .padding(.horizontal, paletteInset)
         }
+        .scrollIndicators(.hidden)
     }
 
     private func swatchView<T: SwatchColor>(
@@ -569,8 +584,16 @@ struct MakePetickerView: View {
                 .fill(swatch.color)
                 .frame(width: size, height: size)
                 .overlay {
-                    // 화면 배경과 구분이 안 되는 밝은 스와치는 회색 테두리로 구분
-                    Circle().strokeBorder(Color.black.opacity(swatch.needsBorder ? 0.15 : 0), lineWidth: 1)
+                    if swatch.isNone {
+                        // '선 없음' — 점선 원 테두리
+                        Circle().strokeBorder(
+                            Color.black,
+                            style: StrokeStyle(lineWidth: 1.1, dash: [3, 3])
+                        )
+                    } else if swatch.needsBorder {
+                        // 화면 배경과 구분이 안 되는 밝은 스와치(흰색)는 회색 테두리로 구분
+                        Circle().strokeBorder(Color.black.opacity(0.15), lineWidth: 1)
+                    }
                 }
                 .overlay {
                     if isSelected {
@@ -601,10 +624,15 @@ struct MakePetickerView: View {
         .buttonStyle(.plain)
     }
 
-    // 현재 선택된 색으로 테두리 다시 입힘 (누끼 결과 재사용 — 빠름)
+    // 현재 선택된 색으로 테두리 다시 입힘 (누끼 결과 재사용 — 빠름). none이면 테두리 없이 누끼만.
     private func restroke() async {
         guard let cutout else { return }
-        let restroked = await StickerStyler.addStroke(to: cutout, color: selectedStroke.uiColor)
+        let restroked: UIImage?
+        if selectedStroke.isNone {
+            restroked = cutout
+        } else {
+            restroked = await StickerStyler.addStroke(to: cutout, color: selectedStroke.uiColor)
+        }
         let newMetrics = restroked.flatMap(StickerMetrics.analyze)
         sticker = restroked
         metrics = newMetrics
@@ -619,7 +647,7 @@ struct MakePetickerView: View {
     // 원본 사진과 테두리 색도 함께 남겨, 메인 화면에서 스티커를 탭하면 다시 편집할 수 있게 한다.
     private func saveAndClose() {
         SharedStore.saveOriginal(currentImage)
-        SharedStore.saveOutlineColor(selectedStroke.uiColor)
+        SharedStore.saveOutlineName(selectedStroke.rawValue)
         SharedStore.saveBackgroundColor(selectedBackground.uiColor)
         if let placement {
             SharedStore.saveStickerTransform(

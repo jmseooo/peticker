@@ -19,8 +19,8 @@ enum SharedStore {
     // 사진이라 알파가 없으므로 JPEG로 저장해 용량을 아낀다.
     private static let originalFileName = "original.jpg"
 
-    // 다시 편집할 때 이어받을 테두리 색
-    private static let outlineColorKey = "stickerOutlineColorRGBA"
+    // 다시 편집할 때 이어받을 테두리 색 이름 (OutlineColor의 rawValue, "none" 포함)
+    private static let outlineNameKey = "stickerOutlineName"
 
     // 위젯 배경색 — sRGB [r, g, b, a] 4요소로 저장.
     // 색상값을 직접 저장해 위젯 타겟이 앱의 Color 확장(Colors.swift)에 의존하지 않게 한다.
@@ -114,19 +114,14 @@ enum SharedStore {
         return (CGFloat(v[0]), CGFloat(v[1]), CGFloat(v[2]))
     }
 
-    /// 다시 편집할 때 이어받을 테두리 색을 저장. 위젯과 무관하므로 갱신은 요청하지 않는다.
-    static func saveOutlineColor(_ color: UIColor) {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard color.getRed(&r, green: &g, blue: &b, alpha: &a) else { return }
-        defaults?.set([Double(r), Double(g), Double(b), Double(a)], forKey: outlineColorKey)
+    /// 다시 편집할 때 이어받을 테두리 색 이름을 저장. 위젯과 무관하므로 갱신은 요청하지 않는다.
+    static func saveOutlineName(_ name: String) {
+        defaults?.set(name, forKey: outlineNameKey)
     }
 
-    /// 저장된 테두리 색(sRGB). 아직 고른 적 없으면 nil.
-    static func outlineColorRGBA() -> (red: Double, green: Double, blue: Double, alpha: Double)? {
-        guard let v = defaults?.array(forKey: outlineColorKey) as? [Double], v.count == 4 else {
-            return nil
-        }
-        return (v[0], v[1], v[2], v[3])
+    /// 저장된 테두리 색 이름. 아직 고른 적 없으면 nil.
+    static func outlineName() -> String? {
+        defaults?.string(forKey: outlineNameKey)
     }
 
     /// 앱이 관찰한 배터리 퍼센트를 저장 (위젯 대비책). 위젯 갱신은 요청하지 않는다 —
