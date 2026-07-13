@@ -358,6 +358,9 @@ struct MakePetickerView: View {
     @State private var selectedStroke: OutlineColor               // 스티커 테두리 색
     @State private var selectedBackground: BackgroundStyle        // 위젯 배경(단색/패턴)
     @State private var isProcessing = true
+    @State private var showChangeButton = false      // 원 탭 시 딤 + Change 버튼 표시
+    @State private var showPhotoPicker = false       // Change 버튼 → 사진 선택기
+    @State private var pickerItem: PhotosPickerItem?
 
     // 스티커 배치 — 핀치(크기)·드래그(위치). 원 밖은 클리핑된다.
     @State private var placement: StickerPlacement?  // nil이면 아직 자동 배치 미확정
@@ -397,6 +400,21 @@ struct MakePetickerView: View {
         .background(Color.bgBase.ignoresSafeArea())
         .task {
             await processImage()
+        }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $pickerItem, matching: .images)
+        .onChange(of: pickerItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                guard let data = try? await newItem.loadTransferable(type: Data.self),
+                      let uiImage = UIImage(data: data) else { return }
+                await MainActor.run {
+                    currentImage = uiImage
+                    showChangeButton = false
+                    placement = nil   // 새 피사체이므로 자동 배치로 다시 정한다
+                    withAnimation(.easeOut(duration: 0.2)) { isProcessing = true }
+                }
+                await processImage()
+            }
         }
     }
 
@@ -518,9 +536,11 @@ struct MakePetickerView: View {
         let box = p.boxRatio * d
 
         return ZStack {
-            // 배경 + 스티커를 원으로 클리핑 — 스티커가 원을 벗어나면 잘린다
+            // 배경 + 스티커를 원으로 클리핑 — 스티커가 원을 벗어나면 잘린다.
+            // 배경은 지름에 고정한다 (안 그러면 스티커를 확대할 때 배경도 같이 커진다).
             ZStack {
                 BackgroundFill(patternAsset: selectedBackground.patternAsset, color: selectedBackground.baseColor)
+                    .frame(width: d, height: d)
 
                 stickerImage
                     .frame(width: box, height: box)
@@ -529,19 +549,31 @@ struct MakePetickerView: View {
             .frame(width: d, height: d)
             .clipShape(Circle())
             .contentShape(Circle())
-            .gesture(manipulationGesture(diameter: d), isEnabled: sticker != nil)
-
-            // 배터리 퍼센트 — 원 상단 근처
-            VStack(spacing: 0) {
-                Text("\(BatteryMonitor.shared.percent)%")
-                    .font(.system(size: 15, weight: .bold))
-                    // 어두운 배경에서도 보이도록 대비색 사용
-                    .foregroundStyle(selectedBackground.foreground)
-                    .padding(.top, d * 0.117)   // 디자인: 원 상단에서 33 (33/281)
-                Spacer()
+            .gesture(manipulationGesture(diameter: d), isEnabled: sticker != nil && !showChangeButton)
+            // 원을 탭하면 딤 + Change 버튼 (핀치·드래그와 구분되는 단일 탭)
+            .onTapGesture {
+                guard sticker != nil else { return }
+                withAnimation(.easeInOut(duration: 0.2)) { showChangeButton.toggle() }
             }
-            .frame(width: d, height: d)
-            .allowsHitTesting(false)   // 배터리 위에서도 스티커를 잡을 수 있게
+
+            // 배터리 퍼센트 — 원 상단 근처 (변경 모드에선 숨김)
+            if !showChangeButton {
+                VStack(spacing: 0) {
+                    Text("\(BatteryMonitor.shared.percent)%")
+                        .font(.system(size: 15, weight: .bold))
+                        // 어두운 배경에서도 보이도록 대비색 사용
+                        .foregroundStyle(selectedBackground.foreground)
+                        .padding(.top, d * 0.117)   // 디자인: 원 상단에서 33 (33/281)
+                    Spacer()
+                }
+                .frame(width: d, height: d)
+                .allowsHitTesting(false)   // 배터리 위에서도 스티커를 잡을 수 있게
+            }
+
+            // 딤 + Change 버튼 — 원을 탭하면 표시
+            if showChangeButton {
+                changeOverlay(diameter: d)
+            }
         }
         .frame(width: d, height: d)
     }
@@ -566,6 +598,32 @@ struct MakePetickerView: View {
                 placement = base.clamped
             }
         return magnify.simultaneously(with: drag)
+    }
+
+    // 원 위 딤 + 사진 다시 고르기 버튼. 바깥(딤)을 탭하면 닫힌다.
+    private func changeOverlay(diameter d: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .fill(Color.black.opacity(0.35))
+                .frame(width: d, height: d)
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.2)) { showChangeButton = false }
+                }
+
+            Button {
+                showChangeButton = false
+                showPhotoPicker = true
+            } label: {
+                VStack(spacing: 8) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 22, weight: .bold))
+                    Text("Change")
+                        .font(.system(size: 16, weight: .bold))
+                }
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var stickerImage: some View {
