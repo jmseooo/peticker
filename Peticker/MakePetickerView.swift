@@ -50,18 +50,91 @@ extension SwatchColor {
     }
 }
 
-// 위젯 배경색 팔레트
-enum BackgroundColor: String, SwatchColor {
+// 위젯 배경 — 단색 6종 + 패턴 이미지 8종
+enum BackgroundStyle: String, CaseIterable, Identifiable {
+    // 단색 (rawValue = hex)
     case plum   = "5B1445"
     case olive  = "7E8714"
     case sky    = "2AC8F2"
     case butter = "F8F396"
     case paper  = "F6F6F6"
     case ink    = "343333"
+    // 패턴 (rawValue = 이름)
+    case dotsPlum     = "dots-plum"
+    case dotsInk      = "dots-ink"
+    case stripeBrown  = "stripe-brown"
+    case stripeCream  = "stripe-cream"
+    case paws         = "paws"
+    case heartsCorner = "hearts-corner"
+    case heartBig     = "heart-big"
+    case gridOlive    = "grid-olive"
 
-    var hex: String { rawValue }
+    var id: String { rawValue }
 
-    static func saved() -> BackgroundColor? { matching(SharedStore.backgroundColorRGBA()) }
+    // 패턴이면 에셋 이름, 단색이면 nil
+    var patternAsset: String? {
+        switch self {
+        case .dotsPlum:     return "BgDotsPlum"
+        case .dotsInk:      return "BgDotsInk"
+        case .stripeBrown:  return "BgStripeBrown"
+        case .stripeCream:  return "BgStripeCream"
+        case .paws:         return "BgPaws"
+        case .heartsCorner: return "BgHeartsCorner"
+        case .heartBig:     return "BgHeartBig"
+        case .gridOlive:    return "BgGridOlive"
+        default:            return nil
+        }
+    }
+
+    // 대표 바탕색 — 단색은 그 색, 패턴은 배경 바탕색(전경 대비 계산·폴백용)
+    var baseHex: String {
+        switch self {
+        case .dotsPlum:     return "5B1445"
+        case .dotsInk:      return "1A1A1A"
+        case .stripeBrown:  return "5A3D34"
+        case .stripeCream:  return "FFFFFF"
+        case .paws:         return "AEE0F5"
+        case .heartsCorner: return "F8D9EC"
+        case .heartBig:     return "F55CB8"
+        case .gridOlive:    return "7B8B0F"
+        default:            return rawValue
+        }
+    }
+
+    var baseColor: Color { Color(hex: baseHex) }
+    var uiColor: UIColor { UIColor(baseColor) }
+
+    private var luminance: CGFloat {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard uiColor.getRed(&r, green: &g, blue: &b, alpha: &a) else { return 1 }
+        return 0.299 * r + 0.587 * g + 0.114 * b
+    }
+
+    // 배경 위에 얹는 전경색(배터리 표시·체크) — 어두운 바탕에선 흰색
+    var foreground: Color { luminance < 0.5 ? .white : .black }
+
+    // 화면 배경(F5F5F5)과 잘 구분되지 않는 밝은 바탕은 스와치에 테두리를 그린다
+    var needsBorder: Bool { luminance > 0.90 }
+
+    static func saved() -> BackgroundStyle? {
+        SharedStore.backgroundName().flatMap(BackgroundStyle.init(rawValue:))
+    }
+}
+
+/// 배경 채움 — 패턴이면 이미지를 꽉 채우고, 단색이면 색을 칠한다. 호출부에서 원/사각으로 클리핑한다.
+struct BackgroundFill: View {
+    let patternAsset: String?
+    let color: Color
+
+    var body: some View {
+        if let patternAsset {
+            Image(patternAsset)
+                .resizable()
+                .scaledToFill()
+        } else {
+            color
+        }
+    }
 }
 
 // 스티커 테두리 색 팔레트. none은 테두리 없음.
@@ -283,7 +356,7 @@ struct MakePetickerView: View {
     @State private var sticker: UIImage?             // 현재 색 테두리 적용 결과
     @State private var metrics: StickerMetrics?      // 스티커 배치용 불투명 픽셀 분포(캐시)
     @State private var selectedStroke: OutlineColor               // 스티커 테두리 색
-    @State private var selectedBackground: BackgroundColor        // 위젯 배경색
+    @State private var selectedBackground: BackgroundStyle        // 위젯 배경(단색/패턴)
     @State private var isProcessing = true
 
     // 스티커 배치 — 핀치(크기)·드래그(위치). 원 밖은 클리핑된다.
@@ -299,7 +372,7 @@ struct MakePetickerView: View {
     ) {
         _currentImage = State(initialValue: originalImage)
         // 이전에 고른 색을 이어받는다 (다시 편집할 때 초기화되지 않도록)
-        _selectedBackground = State(initialValue: BackgroundColor.saved() ?? .paper)
+        _selectedBackground = State(initialValue: BackgroundStyle.saved() ?? .paper)
         _selectedStroke = State(initialValue: OutlineColor.saved() ?? .cyan)
         self.initialPlacement = initialPlacement
         self.onClose = onClose
@@ -447,8 +520,7 @@ struct MakePetickerView: View {
         return ZStack {
             // 배경 + 스티커를 원으로 클리핑 — 스티커가 원을 벗어나면 잘린다
             ZStack {
-                Rectangle()
-                    .fill(selectedBackground.color)
+                BackgroundFill(patternAsset: selectedBackground.patternAsset, color: selectedBackground.baseColor)
 
                 stickerImage
                     .frame(width: box, height: box)
@@ -463,8 +535,8 @@ struct MakePetickerView: View {
             VStack(spacing: 0) {
                 Text("\(BatteryMonitor.shared.percent)%")
                     .font(.system(size: 15, weight: .bold))
-                    // 검정 배경에서도 보이도록 대비색 사용
-                    .foregroundStyle(selectedBackground.contrastColor)
+                    // 어두운 배경에서도 보이도록 대비색 사용
+                    .foregroundStyle(selectedBackground.foreground)
                     .padding(.top, d * 0.117)   // 디자인: 원 상단에서 33 (33/281)
                 Spacer()
             }
@@ -532,9 +604,7 @@ struct MakePetickerView: View {
             paletteLabel("Background")
                 .padding(.horizontal, paletteInset)
             Spacer().frame(height: 7)
-            swatchRow(size: size, selection: selectedBackground) { picked in
-                selectedBackground = picked   // 위젯 배경색 — 재합성 불필요
-            }
+            backgroundSwatchRow(size: size)
             Spacer().frame(height: 17)
             paletteLabel("Outline")
                 .padding(.horizontal, paletteInset)
@@ -552,6 +622,49 @@ struct MakePetickerView: View {
             .font(.system(size: 12, weight: .medium))
             .tracking(-0.5)
             .foregroundStyle(.black)
+    }
+
+    // 배경 스와치 행 — 단색 + 패턴. 넘치면 가로 스크롤.
+    private func backgroundSwatchRow(size: CGFloat) -> some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: swatchSpacing) {
+                ForEach(BackgroundStyle.allCases) { style in
+                    backgroundSwatch(style, size: size, isSelected: style == selectedBackground) {
+                        selectedBackground = style   // 배경만 바뀌므로 재합성 불필요
+                    }
+                }
+            }
+            .padding(.horizontal, paletteInset)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func backgroundSwatch(
+        _ style: BackgroundStyle,
+        size: CGFloat,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            BackgroundFill(patternAsset: style.patternAsset, color: style.baseColor)
+                .frame(width: size, height: size)
+                .clipShape(Circle())
+                .overlay {
+                    // 밝은 바탕은 화면 배경과 구분되도록 회색 테두리
+                    Circle().strokeBorder(Color.black.opacity(style.needsBorder ? 0.15 : 0), lineWidth: 1)
+                }
+                .overlay {
+                    if isSelected {
+                        Image("CheckIcon")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: size * 0.5, height: size * 0.5)
+                            .foregroundStyle(style.foreground)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
     }
 
     // 스와치를 원래 크기로 유지하고, 넘치면 가로 스크롤 (스크롤 표시줄 숨김).
@@ -648,7 +761,12 @@ struct MakePetickerView: View {
     private func saveAndClose() {
         SharedStore.saveOriginal(currentImage)
         SharedStore.saveOutlineName(selectedStroke.rawValue)
-        SharedStore.saveBackgroundColor(selectedBackground.uiColor)
+        SharedStore.saveBackground(
+            name: selectedBackground.rawValue,
+            patternAsset: selectedBackground.patternAsset,
+            color: selectedBackground.uiColor,
+            foreground: UIColor(selectedBackground.foreground)
+        )
         if let placement {
             SharedStore.saveStickerTransform(
                 boxRatio: placement.boxRatio,

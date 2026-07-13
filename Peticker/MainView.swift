@@ -9,13 +9,22 @@ struct WidgetCircle: View {
     let metrics: StickerMetrics?
     let placement: StickerPlacement?   // 사용자가 정한 배치 (없으면 자동)
     let background: Color
+    let backgroundPattern: String?     // 패턴 에셋 이름 (있으면 색 대신 이미지)
     let foreground: Color
     let batteryPercent: Int
 
     var body: some View {
         Circle()
-            .fill(sticker == nil ? Color.brandCyan : background)
+            .fill(sticker == nil ? Color.brandCyan : Color.clear)
             .frame(width: diameter)
+            .background {
+                // 스티커가 있으면 위젯 배경(단색/패턴)을 원에 채운다
+                if sticker != nil {
+                    BackgroundFill(patternAsset: backgroundPattern, color: background)
+                        .frame(width: diameter, height: diameter)
+                        .clipShape(Circle())
+                }
+            }
             .overlay {
                 if let sticker {
                     ZStack {
@@ -72,9 +81,10 @@ struct MainView: View {
     @State private var stickerMetrics: StickerMetrics?   // 스티커 배치용 불투명 픽셀 분포(캐시)
     @State private var stickerPlacement: StickerPlacement?  // 사용자가 정한 배치
     @State private var widgetBackground: Color = .white   // 제작 화면에서 고른 위젯 배경색
+    @State private var widgetPattern: String?             // 배경 패턴 에셋 (있으면 이미지)
     @State private var widgetForeground: Color = .black   // 그 위에 얹는 배터리 표시 색
 
-    // 저장된 스티커와 배경색을 함께 읽어 미리보기를 위젯과 같은 모습으로 맞춘다
+    // 저장된 스티커와 배경을 함께 읽어 미리보기를 위젯과 같은 모습으로 맞춘다
     private func reloadWidgetPreview() {
         savedSticker = SharedStore.loadSticker()
         savedOriginal = SharedStore.loadOriginal()
@@ -82,6 +92,7 @@ struct MainView: View {
         stickerPlacement = StickerPlacement.saved()
         let colors = SharedStore.widgetColors()
         widgetBackground = colors.background
+        widgetPattern = colors.pattern
         widgetForeground = colors.foreground
     }
 
@@ -127,6 +138,7 @@ struct MainView: View {
                     metrics: stickerMetrics,
                     placement: stickerPlacement,
                     background: widgetBackground,
+                    backgroundPattern: widgetPattern,
                     foreground: widgetForeground,
                     batteryPercent: BatteryMonitor.shared.percent
                 )

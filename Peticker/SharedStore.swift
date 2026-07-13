@@ -22,9 +22,12 @@ enum SharedStore {
     // 다시 편집할 때 이어받을 테두리 색 이름 (OutlineColor의 rawValue, "none" 포함)
     private static let outlineNameKey = "stickerOutlineName"
 
-    // 위젯 배경색 — sRGB [r, g, b, a] 4요소로 저장.
-    // 색상값을 직접 저장해 위젯 타겟이 앱의 Color 확장(Colors.swift)에 의존하지 않게 한다.
-    private static let backgroundColorKey = "widgetBackgroundColorRGBA"
+    // 위젯 배경 — 이름(BackgroundStyle rawValue), 패턴 에셋, 바탕색 RGBA, 전경색 RGBA로 저장.
+    // 색상·에셋 이름을 직접 저장해 위젯 타겟이 앱의 BackgroundStyle에 의존하지 않게 한다.
+    private static let backgroundNameKey = "widgetBackgroundName"
+    private static let backgroundPatternKey = "widgetBackgroundPattern"   // 패턴 에셋 이름(없으면 단색)
+    private static let backgroundColorKey = "widgetBackgroundColorRGBA"   // 바탕색(단색 배경·폴백)
+    private static let backgroundForegroundKey = "widgetBackgroundForegroundRGBA"
 
     // 앱이 마지막으로 관찰한 배터리 퍼센트 — 위젯이 직접 못 읽을 때의 대비책
     private static let batteryPercentKey = "lastKnownBatteryPercent"
@@ -70,21 +73,39 @@ enum SharedStore {
         }
     }
 
-    /// 위젯 배경색을 저장하고 위젯 갱신을 요청.
-    static func saveBackgroundColor(_ color: UIColor) {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard color.getRed(&r, green: &g, blue: &b, alpha: &a) else { return }
-        defaults?.set([Double(r), Double(g), Double(b), Double(a)], forKey: backgroundColorKey)
+    /// 위젯 배경을 저장하고 위젯 갱신을 요청.
+    /// - name: BackgroundStyle rawValue (앱에서 다시 편집 시 복원용)
+    /// - patternAsset: 패턴 에셋 이름 (단색이면 nil)
+    /// - color: 바탕색 (단색 배경·폴백)
+    /// - foreground: 배경 위 배터리 표시 색
+    static func saveBackground(name: String, patternAsset: String?, color: UIColor, foreground: UIColor) {
+        defaults?.set(name, forKey: backgroundNameKey)
+        if let patternAsset {
+            defaults?.set(patternAsset, forKey: backgroundPatternKey)
+        } else {
+            defaults?.removeObject(forKey: backgroundPatternKey)
+        }
+        setColor(color, forKey: backgroundColorKey)
+        setColor(foreground, forKey: backgroundForegroundKey)
         WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
     }
 
-    /// 저장된 위젯 배경색(sRGB). 아직 고른 적 없으면 nil.
-    static func backgroundColorRGBA() -> (red: Double, green: Double, blue: Double, alpha: Double)? {
-        guard let v = defaults?.array(forKey: backgroundColorKey) as? [Double], v.count == 4 else {
-            return nil
-        }
-        return (v[0], v[1], v[2], v[3])
+    private static func setColor(_ color: UIColor, forKey key: String) {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard color.getRed(&r, green: &g, blue: &b, alpha: &a) else { return }
+        defaults?.set([Double(r), Double(g), Double(b), Double(a)], forKey: key)
     }
+
+    private static func color(forKey key: String) -> Color? {
+        guard let v = defaults?.array(forKey: key) as? [Double], v.count == 4 else { return nil }
+        return Color(.sRGB, red: v[0], green: v[1], blue: v[2], opacity: v[3])
+    }
+
+    /// 저장된 배경 이름 (BackgroundStyle rawValue). 없으면 nil.
+    static func backgroundName() -> String? { defaults?.string(forKey: backgroundNameKey) }
+
+    /// 저장된 배경 패턴 에셋 이름. 단색이거나 없으면 nil.
+    static func backgroundPatternAsset() -> String? { defaults?.string(forKey: backgroundPatternKey) }
 
     /// 다시 편집할 수 있도록 원본 사진을 저장. 누끼를 새로 뜨기에 충분한 해상도로 줄인다.
     @discardableResult
@@ -136,14 +157,13 @@ enum SharedStore {
         return defaults.integer(forKey: batteryPercentKey)
     }
 
-    /// 위젯·메인 화면 미리보기가 함께 쓰는 배경색과 그 위에 얹을 전경색(100% 표시).
-    /// 아직 배경색을 고른 적 없으면 흰 배경 + 검정 전경.
-    static func widgetColors() -> (background: Color, foreground: Color) {
-        guard let c = backgroundColorRGBA() else { return (.white, .black) }
-        let background = Color(.sRGB, red: c.red, green: c.green, blue: c.blue, opacity: c.alpha)
-        // sRGB 상대 휘도(근사) — 어두운 배경에선 전경을 흰색으로 뒤집어 100% 표시가 묻히지 않게 한다
-        let luminance = 0.299 * c.red + 0.587 * c.green + 0.114 * c.blue
-        return (background, luminance < 0.5 ? .white : .black)
+    /// 위젯·메인 화면 미리보기가 함께 쓰는 배경 정보.
+    /// pattern이 있으면 그 에셋을, 없으면 background 색을 배경으로 그린다.
+    /// 아직 배경을 고른 적 없으면 흰 배경 + 검정 전경.
+    static func widgetColors() -> (background: Color, foreground: Color, pattern: String?) {
+        let background = color(forKey: backgroundColorKey) ?? .white
+        let foreground = color(forKey: backgroundForegroundKey) ?? .black
+        return (background, foreground, backgroundPatternAsset())
     }
 
     /// 위젯에서 사용 — 저장된 스티커를 ImageIO로 다운샘플링해 작은 PNG 데이터로 반환.

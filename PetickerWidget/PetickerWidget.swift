@@ -13,6 +13,7 @@ struct StickerEntry: TimelineEntry {
     let date: Date
     let imageData: Data?
     let background: Color
+    let backgroundPattern: String?   // 패턴 에셋 이름 (있으면 색 대신 이미지 배경)
     let foreground: Color    // 배경 위 배터리 표시 색 (어두운 배경에선 흰색)
     let batteryPercent: Int
     let placement: WidgetPlacement?   // nil이면 예전 방식(자동 여백)으로 그린다
@@ -30,6 +31,7 @@ struct StickerEntry: TimelineEntry {
             date: Date(),
             imageData: imageData,
             background: colors.background,
+            backgroundPattern: colors.pattern,
             foreground: colors.foreground,
             batteryPercent: percent,
             placement: placement
@@ -44,6 +46,7 @@ struct StickerProvider: TimelineProvider {
             date: Date(),
             imageData: nil,
             background: .white,
+            backgroundPattern: nil,
             foreground: .black,
             batteryPercent: Battery.fallbackPercent,
             placement: nil
@@ -116,10 +119,16 @@ struct PetickerWidgetEntryView: View {
             // GeometryReader는 자식을 좌상단에 두므로, 위젯 전체를 채워 중앙 정렬되게 함
             .frame(width: geo.size.width, height: geo.size.height)
         }
-        // 앱의 Background 팔레트에서 고른 색 (iOS는 서드파티 위젯의 '진짜 투명'을 허용하지 않아
-        // 벽지를 비출 수는 없지만, 배경색 지정은 정식 지원된다).
+        // 앱의 Background 팔레트에서 고른 배경 — 패턴이면 이미지, 아니면 단색.
+        // (iOS는 서드파티 위젯의 '진짜 투명'은 막지만 배경 지정은 정식 지원한다.)
         // 시스템이 위젯 모서리에 맞춰 자동으로 클리핑한다.
-        .containerBackground(entry.background, for: .widget)
+        .containerBackground(for: .widget) {
+            if let pattern = entry.backgroundPattern {
+                Image(pattern).resizable().scaledToFill()
+            } else {
+                entry.background
+            }
+        }
     }
 }
 
@@ -138,5 +147,5 @@ struct PetickerWidget: Widget {
 #Preview(as: .systemSmall) {
     PetickerWidget()
 } timeline: {
-    StickerEntry(date: Date(), imageData: nil, background: .white, foreground: .black, batteryPercent: 100, placement: nil)
+    StickerEntry(date: Date(), imageData: nil, background: .white, backgroundPattern: nil, foreground: .black, batteryPercent: 100, placement: nil)
 }
