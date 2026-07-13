@@ -9,16 +9,18 @@ struct SplashView: View {
             Color.bgBase.ignoresSafeArea()
 
             // 모인 상태 (시작)
-            Image("PetickerLogo")
+            Image("StickieLogo")
                 .resizable()
                 .scaledToFit()
                 .padding(.horizontal, 32)
                 .opacity(assembled ? 0 : 1)
 
-            // 흩어진 상태 (끝)
-            Image("PetickerScattered")
+            // 흩어진 상태 (끝) — 여백이 없는 그림이라 화면에 붙지 않게 패딩을 준다
+            Image("StickieScattered")
                 .resizable()
                 .scaledToFit()
+                .padding(.horizontal, 56)
+                .padding(.vertical, 40)
                 .scaleEffect(assembled ? 1 : 0.88)
                 .opacity(assembled ? 1 : 0)
 

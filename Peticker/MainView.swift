@@ -78,8 +78,8 @@ struct MainView: View {
 
                 // 딤 아래 요소
                 Group {
-                    // Peticker 로고 — 상단 중앙
-                    Image("PetickerLogo")
+                    // Stickie 로고 — 상단 중앙
+                    Image("StickieLogo")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 38)

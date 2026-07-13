@@ -10,7 +10,7 @@ struct OnboardingView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    Image("PetickerLogo")
+                    Image("StickieLogo")
                         .resizable()
                         .scaledToFit()
                         .frame(height: 44)
