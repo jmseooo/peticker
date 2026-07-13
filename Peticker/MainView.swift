@@ -7,6 +7,7 @@ struct WidgetCircle: View {
     let diameter: CGFloat
     let sticker: UIImage?
     let metrics: StickerMetrics?
+    let placement: StickerPlacement?   // 사용자가 정한 배치 (없으면 자동)
     let background: Color
     let foreground: Color
     let batteryPercent: Int
@@ -17,9 +18,11 @@ struct WidgetCircle: View {
             .frame(width: diameter)
             .overlay {
                 if let sticker {
-                    // 완성 상태 — 배터리 퍼센트 + 스티커(위젯 미리보기와 동일 구성)
-                    let layout = StickerCircleLayout(diameter: diameter, metrics: metrics)
                     ZStack {
+                        // 스티커 — 사용자 배치가 있으면 그대로, 없으면 자동 배치. 원 밖은 잘린다.
+                        stickerLayer(sticker)
+
+                        // 배터리 퍼센트 — 원 상단 근처 (스티커 위)
                         VStack(spacing: 0) {
                             Text("\(batteryPercent)%")
                                 .font(.system(size: 16, weight: .bold))
@@ -27,12 +30,6 @@ struct WidgetCircle: View {
                                 .padding(.top, diameter * 0.117)   // 제작 화면과 동일 비율
                             Spacer()
                         }
-                        // 배터리 표시 아래, 원 안쪽에 내접하도록 배치
-                        Image(uiImage: sticker)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: layout.size.width, height: layout.size.height)
-                            .offset(y: layout.offsetY)
                     }
                     .frame(width: diameter, height: diameter)
                 } else {
@@ -42,6 +39,24 @@ struct WidgetCircle: View {
                         .frame(width: 110, height: 110)
                 }
             }
+            .clipShape(Circle())
+    }
+
+    @ViewBuilder
+    private func stickerLayer(_ sticker: UIImage) -> some View {
+        let image = Image(uiImage: sticker).resizable().scaledToFit()
+        if let p = placement {
+            let box = p.boxRatio * diameter
+            image
+                .frame(width: box, height: box)
+                .offset(x: p.offset.width * diameter, y: p.offset.height * diameter)
+        } else {
+            // 예전 스티커(배치 정보 없음) — 자동 배치
+            let layout = StickerCircleLayout(diameter: diameter, metrics: metrics)
+            image
+                .frame(width: layout.size.width, height: layout.size.height)
+                .offset(y: layout.offsetY)
+        }
     }
 }
 
@@ -55,6 +70,7 @@ struct MainView: View {
     @State private var savedSticker: UIImage?   // 완성 후 청록 원에 표시할 스티커(위젯과 동일 결과)
     @State private var savedOriginal: UIImage?  // 다시 편집할 원본 사진 (없으면 편집 불가)
     @State private var stickerMetrics: StickerMetrics?   // 스티커 배치용 불투명 픽셀 분포(캐시)
+    @State private var stickerPlacement: StickerPlacement?  // 사용자가 정한 배치
     @State private var widgetBackground: Color = .white   // 제작 화면에서 고른 위젯 배경색
     @State private var widgetForeground: Color = .black   // 그 위에 얹는 배터리 표시 색
 
@@ -63,6 +79,7 @@ struct MainView: View {
         savedSticker = SharedStore.loadSticker()
         savedOriginal = SharedStore.loadOriginal()
         stickerMetrics = savedSticker.flatMap(StickerMetrics.analyze)
+        stickerPlacement = StickerPlacement.saved()
         let colors = SharedStore.widgetColors()
         widgetBackground = colors.background
         widgetForeground = colors.foreground
@@ -108,14 +125,17 @@ struct MainView: View {
                     diameter: w * 0.72,
                     sticker: savedSticker,
                     metrics: stickerMetrics,
+                    placement: stickerPlacement,
                     background: widgetBackground,
                     foreground: widgetForeground,
                     batteryPercent: BatteryMonitor.shared.percent
                 )
                 Group {
                     if let savedOriginal {
-                        // 완성 스티커를 탭하면 원본을 다시 불러 수정 뷰로
-                        Button { pickedPhoto = PickedPhoto(image: savedOriginal) } label: { circle }
+                        // 완성 스티커를 탭하면 원본을 다시 불러 수정 뷰로 (이전 배치를 이어받는다)
+                        Button {
+                            pickedPhoto = PickedPhoto(image: savedOriginal, placement: stickerPlacement)
+                        } label: { circle }
                     } else {
                         // 원본이 없으면(첫 제작이거나 원본 저장 이전 버전) 사진을 고르게 한다
                         PhotosPicker(selection: $selectedItem, matching: .images) { circle }
@@ -137,10 +157,10 @@ struct MainView: View {
             }
         }
         .fullScreenCover(item: $pickedPhoto) { photo in
-            MakePetickerView(originalImage: photo.image) {
+            MakePetickerView(originalImage: photo.image, initialPlacement: photo.placement) {
                 pickedPhoto = nil
                 selectedItem = nil
-                reloadWidgetPreview()   // 완성 결과(스티커·배경색)를 원에 반영
+                reloadWidgetPreview()   // 완성 결과(스티커·배경색·배치)를 원에 반영
             }
         }
         .onChange(of: selectedItem) { _, newItem in

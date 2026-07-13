@@ -1,6 +1,13 @@
 import WidgetKit
 import SwiftUI
 
+// 사용자가 수정 뷰에서 핀치·드래그로 정한 스티커 배치 (한 변 대비 비율)
+struct WidgetPlacement {
+    let boxRatio: CGFloat
+    let offsetX: CGFloat
+    let offsetY: CGFloat
+}
+
 // 위젯 한 칸에 담기는 데이터 — 다운샘플링된 작은 스티커 PNG (Data는 Sendable) + 배경/전경색
 struct StickerEntry: TimelineEntry {
     let date: Date
@@ -8,6 +15,7 @@ struct StickerEntry: TimelineEntry {
     let background: Color
     let foreground: Color    // 배경 위 배터리 표시 색 (어두운 배경에선 흰색)
     let batteryPercent: Int
+    let placement: WidgetPlacement?   // nil이면 예전 방식(자동 여백)으로 그린다
 
     static func current(imageData: Data?) -> StickerEntry {
         let colors = SharedStore.widgetColors()
@@ -15,12 +23,16 @@ struct StickerEntry: TimelineEntry {
         let percent = Battery.currentPercent()
             ?? SharedStore.lastKnownBatteryPercent()
             ?? Battery.fallbackPercent
+        let placement = SharedStore.stickerTransform().map {
+            WidgetPlacement(boxRatio: $0.boxRatio, offsetX: $0.offsetX, offsetY: $0.offsetY)
+        }
         return StickerEntry(
             date: Date(),
             imageData: imageData,
             background: colors.background,
             foreground: colors.foreground,
-            batteryPercent: percent
+            batteryPercent: percent,
+            placement: placement
         )
     }
 }
@@ -33,7 +45,8 @@ struct StickerProvider: TimelineProvider {
             imageData: nil,
             background: .white,
             foreground: .black,
-            batteryPercent: Battery.fallbackPercent
+            batteryPercent: Battery.fallbackPercent,
+            placement: nil
         )
     }
 
@@ -66,12 +79,24 @@ struct PetickerWidgetEntryView: View {
                 }
 
                 if let data = entry.imageData, let image = UIImage(data: data) {
-                    // 스티커 — 상단 배터리 표시를 침범하지 않도록 위쪽 여백 확보
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .padding(.top, geo.size.height * 0.24)
-                        .padding([.horizontal, .bottom], 6)
+                    if let p = entry.placement {
+                        // 사용자가 정한 배치 — 한 변 대비 비율로 크기·위치를 재현한다.
+                        // 위젯 밖은 시스템이 자동 클리핑한다.
+                        let base = geo.size.width
+                        let box = p.boxRatio * base
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: box, height: box)
+                            .offset(x: p.offsetX * base, y: p.offsetY * base)
+                    } else {
+                        // 예전 스티커(배치 정보 없음) — 상단 배터리를 피하는 자동 여백
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .padding(.top, geo.size.height * 0.24)
+                            .padding([.horizontal, .bottom], 6)
+                    }
                 } else {
                     // 아직 스티커를 만들지 않은 경우 — 로고 + 안내
                     VStack(spacing: 8) {
@@ -113,5 +138,5 @@ struct PetickerWidget: Widget {
 #Preview(as: .systemSmall) {
     PetickerWidget()
 } timeline: {
-    StickerEntry(date: Date(), imageData: nil, background: .white, foreground: .black, batteryPercent: 100)
+    StickerEntry(date: Date(), imageData: nil, background: .white, foreground: .black, batteryPercent: 100, placement: nil)
 }

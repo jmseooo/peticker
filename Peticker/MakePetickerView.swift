@@ -5,6 +5,7 @@ import PhotosUI
 struct PickedPhoto: Identifiable {
     let id = UUID()
     let image: UIImage
+    var placement: StickerPlacement? = nil   // 다시 편집이면 이전 배치를 이어받는다
 }
 
 // 스와치 한 칸이 갖춰야 할 것 — Background·Outline 두 행이 같은 UI를 공유한다
@@ -215,6 +216,42 @@ struct StickerCircleLayout {
     }
 }
 
+/// 사용자가 핀치·드래그로 정한 스티커 배치. 지름 대비 비율이라 원/위젯 크기와 무관하다.
+/// 스티커는 한 변이 `boxRatio × 지름`인 정사각 프레임에 scaledToFit으로 들어가고,
+/// 원 중심에서 (offset × 지름)만큼 이동한다.
+struct StickerPlacement: Equatable {
+    var boxRatio: CGFloat        // 정사각 프레임 한 변 / 지름
+    var offset: CGSize           // 원 중심 기준 이동량 / 지름
+
+    static let scaleRange: ClosedRange<CGFloat> = 0.15...3.0
+    static let offsetLimit: CGFloat = 1.0   // 각 축으로 지름의 ±1배까지 (원 밖은 크롭)
+
+    /// 자동 배치(StickerCircleLayout)와 같은 초기 위치·크기. 비율이라 지름은 임의값이면 된다.
+    static func fitted(_ metrics: StickerMetrics?) -> StickerPlacement {
+        let d: CGFloat = 1000
+        let layout = StickerCircleLayout(diameter: d, metrics: metrics)
+        // scaledToFit 정사각 프레임이라 한 변 = 그림의 긴 변 (StickerCircleLayout.size의 큰 쪽)
+        let box = max(layout.size.width, layout.size.height) / d
+        return StickerPlacement(boxRatio: box, offset: CGSize(width: 0, height: layout.offsetY / d))
+    }
+
+    var clamped: StickerPlacement {
+        StickerPlacement(
+            boxRatio: min(max(boxRatio, Self.scaleRange.lowerBound), Self.scaleRange.upperBound),
+            offset: CGSize(
+                width: min(max(offset.width, -Self.offsetLimit), Self.offsetLimit),
+                height: min(max(offset.height, -Self.offsetLimit), Self.offsetLimit)
+            )
+        )
+    }
+
+    /// 공유 저장소에서 읽어온 변환. 없으면 nil.
+    static func saved() -> StickerPlacement? {
+        guard let t = SharedStore.stickerTransform() else { return nil }
+        return StickerPlacement(boxRatio: t.boxRatio, offset: CGSize(width: t.offsetX, height: t.offsetY))
+    }
+}
+
 /// 화면(window)의 안전영역 인셋.
 /// 이 화면은 fullScreenCover로 표시되는데 그 컨텍스트에선 GeometryProxy의 safeAreaInsets가
 /// 0으로 내려와 상단 바가 상태바를 덮는다. 표시 방식에 흔들리지 않도록 창에서 직접 읽는다.
@@ -240,14 +277,24 @@ struct MakePetickerView: View {
     @State private var selectedStroke: OutlineColor               // 스티커 테두리 색
     @State private var selectedBackground: BackgroundColor        // 위젯 배경색
     @State private var isProcessing = true
-    @State private var showChangeButton = false      // 원 탭 시 딤 + Change 버튼 표시
     @State private var pickerItem: PhotosPickerItem? // 사진 다시 고르기
 
-    init(originalImage: UIImage, onClose: @escaping () -> Void) {
+    // 스티커 배치 — 핀치(크기)·드래그(위치). 원 밖은 클리핑된다.
+    @State private var placement: StickerPlacement?  // nil이면 아직 자동 배치 미확정
+    @GestureState private var pinch: CGFloat = 1     // 진행 중 핀치 배율
+    @GestureState private var pan: CGSize = .zero    // 진행 중 드래그(지름 대비 비율)
+    private let initialPlacement: StickerPlacement?  // 다시 편집 시 이어받을 배치
+
+    init(
+        originalImage: UIImage,
+        initialPlacement: StickerPlacement? = nil,
+        onClose: @escaping () -> Void
+    ) {
         _currentImage = State(initialValue: originalImage)
         // 이전에 고른 색을 이어받는다 (다시 편집할 때 초기화되지 않도록)
         _selectedBackground = State(initialValue: BackgroundColor.saved() ?? .paper)
         _selectedStroke = State(initialValue: OutlineColor.saved() ?? .cyan)
+        self.initialPlacement = initialPlacement
         self.onClose = onClose
     }
 
@@ -278,7 +325,7 @@ struct MakePetickerView: View {
                       let uiImage = UIImage(data: data) else { return }
                 await MainActor.run {
                     currentImage = uiImage
-                    showChangeButton = false
+                    placement = nil   // 새 피사체이므로 자동 배치로 다시 정한다
                     withAnimation(.easeOut(duration: 0.2)) { isProcessing = true }
                 }
                 await processImage()
@@ -388,67 +435,93 @@ struct MakePetickerView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    // 홈 화면 위젯처럼 보이는 원(배경색은 Background 팔레트) + 스티커
-    private func widgetPreview(diameter d: CGFloat) -> some View {
-        // 상단 배터리 표시를 피하면서 원 안에 완전히 들어가는, 중앙정렬 최대 크기
-        let layout = StickerCircleLayout(diameter: d, metrics: metrics)
-
-        return ZStack {
-            Circle()
-                .fill(showChangeButton ? Color(white: 0.55) : selectedBackground.color)
-                .frame(width: d, height: d)
-
-            // 스티커 — 배터리 표시 아래, 원 안쪽에 내접하도록 배치
-            stickerImage
-                .frame(width: layout.size.width, height: layout.size.height)
-                .offset(y: layout.offsetY)
-
-            // 배터리 퍼센트 — 원 상단 근처 (변경 모드에선 숨김)
-            if !showChangeButton {
-                VStack(spacing: 0) {
-                    Text("\(BatteryMonitor.shared.percent)%")
-                        .font(.system(size: 15, weight: .bold))
-                        // 검정 배경에서도 보이도록 대비색 사용
-                        .foregroundStyle(selectedBackground.contrastColor)
-                        .padding(.top, d * 0.117)   // 디자인: 원 상단에서 33 (33/281)
-                    Spacer()
-                }
-                .frame(width: d, height: d)
-            }
-
-            // 딤 + Change 버튼 — 원을 탭하면 표시
-            if showChangeButton {
-                changeOverlay(diameter: d)
-            }
-        }
-        .frame(width: d, height: d)
-        .contentShape(Circle())
-        .onTapGesture {
-            withAnimation(.easeInOut(duration: 0.2)) { showChangeButton.toggle() }
-        }
+    // 지금 화면에 반영할 배치 (진행 중인 핀치·드래그를 얹는다)
+    private var livePlacement: StickerPlacement {
+        let base = placement ?? .fitted(metrics)
+        return StickerPlacement(
+            boxRatio: base.boxRatio * pinch,
+            offset: CGSize(width: base.offset.width + pan.width, height: base.offset.height + pan.height)
+        )
     }
 
-    // 원 위 딤 처리 + 사진 다시 고르기 버튼
-    private func changeOverlay(diameter d: CGFloat) -> some View {
-        ZStack {
-            Circle()
-                .fill(Color.black.opacity(0.15))
-                .frame(width: d, height: d)
+    // 홈 화면 위젯처럼 보이는 원(배경색은 Background 팔레트) + 스티커.
+    // 스티커는 핀치로 크기, 드래그로 위치를 조절한다. 원 밖은 클리핑된다.
+    private func widgetPreview(diameter d: CGFloat) -> some View {
+        let p = livePlacement
+        let box = p.boxRatio * d
 
-            PhotosPicker(selection: $pickerItem, matching: .images) {
-                VStack(spacing: 8) {
-                    Text("Change")
-                        .font(.system(size: 20, weight: .bold))
-                    Image("ChangeIcon")
-                        .renderingMode(.template)   // 흰색 픽셀 아이콘 틴트
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 24, height: 24)
-                }
-                .foregroundStyle(.white)
+        return ZStack {
+            // 배경 + 스티커를 원으로 클리핑 — 스티커가 원을 벗어나면 잘린다
+            ZStack {
+                Rectangle()
+                    .fill(selectedBackground.color)
+
+                stickerImage
+                    .frame(width: box, height: box)
+                    .offset(x: p.offset.width * d, y: p.offset.height * d)
             }
-            .buttonStyle(.plain)
+            .frame(width: d, height: d)
+            .clipShape(Circle())
+            .contentShape(Circle())
+            .gesture(manipulationGesture(diameter: d), isEnabled: sticker != nil)
+
+            // 배터리 퍼센트 — 원 상단 근처
+            VStack(spacing: 0) {
+                Text("\(BatteryMonitor.shared.percent)%")
+                    .font(.system(size: 15, weight: .bold))
+                    // 검정 배경에서도 보이도록 대비색 사용
+                    .foregroundStyle(selectedBackground.contrastColor)
+                    .padding(.top, d * 0.117)   // 디자인: 원 상단에서 33 (33/281)
+                Spacer()
+            }
+            .frame(width: d, height: d)
+            .allowsHitTesting(false)   // 배터리 위에서도 스티커를 잡을 수 있게
+
+            // 사진 교체 버튼 — 우상단
+            changeButton(diameter: d)
         }
+        .frame(width: d, height: d)
+    }
+
+    // 핀치(크기) + 드래그(위치). 두 제스처를 동시에 인식한다.
+    private func manipulationGesture(diameter d: CGFloat) -> some Gesture {
+        let magnify = MagnifyGesture()
+            .updating($pinch) { value, state, _ in state = value.magnification }
+            .onEnded { value in
+                var base = placement ?? .fitted(metrics)
+                base.boxRatio *= value.magnification
+                placement = base.clamped
+            }
+        let drag = DragGesture()
+            .updating($pan) { value, state, _ in
+                state = CGSize(width: value.translation.width / d, height: value.translation.height / d)
+            }
+            .onEnded { value in
+                var base = placement ?? .fitted(metrics)
+                base.offset.width += value.translation.width / d
+                base.offset.height += value.translation.height / d
+                placement = base.clamped
+            }
+        return magnify.simultaneously(with: drag)
+    }
+
+    // 우상단 사진 교체 버튼 (원 안은 스티커 드래그에 쓰이므로 별도 버튼으로 분리)
+    private func changeButton(diameter d: CGFloat) -> some View {
+        VStack {
+            HStack {
+                Spacer()
+                PhotosPicker(selection: $pickerItem, matching: .images) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 34, height: 34)
+                        .background(Color.black.opacity(0.35), in: Circle())
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+        .frame(width: d, height: d)
     }
 
     private var stickerImage: some View {
@@ -568,17 +641,29 @@ struct MakePetickerView: View {
     private func restroke() async {
         guard let cutout else { return }
         let restroked = await StickerStyler.addStroke(to: cutout, color: selectedStroke.uiColor)
+        let newMetrics = restroked.flatMap(StickerMetrics.analyze)
         sticker = restroked
-        // 테두리가 붙으면 불투명 영역이 넓어지므로 배치를 다시 잰다
-        metrics = restroked.flatMap(StickerMetrics.analyze)
+        metrics = newMetrics
+        // 첫 배치가 아직 없으면 정한다 — 다시 편집이면 이전 배치, 아니면 자동 배치.
+        // 이미 사용자가 핀치·드래그로 옮겼다면(placement != nil) 색만 바뀐 것이므로 유지한다.
+        if placement == nil {
+            placement = initialPlacement ?? .fitted(newMetrics)
+        }
     }
 
-    // DONE — 완성 스티커·배경색을 공유 저장소에 저장(위젯이 읽어 표시)한 뒤 화면 닫기.
+    // DONE — 완성 스티커·배경색·배치를 공유 저장소에 저장(위젯이 읽어 표시)한 뒤 화면 닫기.
     // 원본 사진과 테두리 색도 함께 남겨, 메인 화면에서 스티커를 탭하면 다시 편집할 수 있게 한다.
     private func saveAndClose() {
         SharedStore.saveOriginal(currentImage)
         SharedStore.saveOutlineColor(selectedStroke.uiColor)
         SharedStore.saveBackgroundColor(selectedBackground.uiColor)
+        if let placement {
+            SharedStore.saveStickerTransform(
+                boxRatio: placement.boxRatio,
+                offsetX: placement.offset.width,
+                offsetY: placement.offset.height
+            )
+        }
         if let sticker {
             SharedStore.saveSticker(sticker)
         }
