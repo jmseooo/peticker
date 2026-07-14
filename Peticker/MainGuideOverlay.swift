@@ -12,7 +12,7 @@ struct MainGuideOverlay: View {
             Text("Click to add your widget!")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
-                .position(x: w * 0.557, y: h * 0.299)
+                .position(x: w * 0.557, y: h * 0.299 + 25)
 
             // 화살표 — Figma 아래 방향, 중심 (208.5/375, 278.5/812), size=29
             // (ArrowUp 에셋은 실제로는 아래를 향하므로 회전하지 않음)
@@ -22,7 +22,7 @@ struct MainGuideOverlay: View {
                 .scaledToFit()
                 .frame(width: 29, height: 29)
                 .foregroundStyle(.white)
-                .position(x: w * 0.556, y: h * 0.343)
+                .position(x: w * 0.556, y: h * 0.343 + 25)
         }
     }
 }

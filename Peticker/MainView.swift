@@ -112,16 +112,16 @@ struct MainView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 153, height: 24)
-                        .position(x: w / 2, y: 30)
+                        .position(x: w / 2, y: 30 + 25)
 
                     // 핑크 잠금 슬롯 — 좌상단
                     LockedSlot(size: 149, color: .brandPink)
-                        .position(x: w * 0.242, y: h * 0.228)
+                        .position(x: w * 0.242, y: h * 0.228 + 25)
                         .onTapGesture { showComingSoon = true }
 
                     // 라임 잠금 슬롯 — 좌하단
                     LockedSlot(size: 105, color: .brandLime)
-                        .position(x: w * 0.340, y: h * 0.843)
+                        .position(x: w * 0.340, y: h * 0.843 + 25)
                         .onTapGesture { showComingSoon = true }
                 }
 
@@ -155,7 +155,7 @@ struct MainView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .position(x: w * 0.540, y: h * 0.524)
+                .position(x: w * 0.540, y: h * 0.524 + 25)
 
                 // 가이드 텍스트·화살표 — 청록 원 위
                 if showGuide {
@@ -176,7 +176,7 @@ struct MainView: View {
             }
             .buttonStyle(.plain)
             .padding(.trailing, 35)
-            .padding(.bottom, 40)
+            .padding(.bottom, 40 - 25)
         }
         .overlay {
             if showComingSoon {
