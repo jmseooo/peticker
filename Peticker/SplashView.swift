@@ -33,6 +33,7 @@ struct SplashView: View {
                 .resizable()
                 .scaledToFit()
                 .padding(.horizontal, 32)
+                .offset(y: -70)
                 .opacity(showSmallLogo ? 1 : 0)
 
             // 흩어진 상태 (끝) — 글자가 순서대로 하나씩 튀어나온다
