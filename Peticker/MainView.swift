@@ -73,6 +73,7 @@ struct WidgetCircle: View {
 struct MainView: View {
     @Environment(AppRouter.self) var router
     @State private var showComingSoon = false
+    @State private var showSettings = false
     @State private var showGuide = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var pickedPhoto: PickedPhoto?
@@ -167,7 +168,7 @@ struct MainView: View {
         // 설정 아이콘 — 우하단 (오른쪽 35, 아래 40)
         .overlay(alignment: .bottomTrailing) {
             Button {
-                showComingSoon = true   // TODO: 설정 화면 연결
+                showSettings = true
             } label: {
                 Image("SettingsIcon")
                     .resizable()
@@ -182,6 +183,9 @@ struct MainView: View {
             if showComingSoon {
                 ComingSoonOverlay { showComingSoon = false }
             }
+        }
+        .fullScreenCover(isPresented: $showSettings) {
+            SettingsView { showSettings = false }
         }
         .fullScreenCover(item: $pickedPhoto) { photo in
             MakePetickerView(originalImage: photo.image, initialPlacement: photo.placement) {

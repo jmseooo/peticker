@@ -20,6 +20,7 @@
 		BB0001000000000000000010 /* StickerStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000010 /* StickerStyler.swift */; };
 		BB0001000000000000000011 /* MakePetickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000011 /* MakePetickerView.swift */; };
 		BB0001000000000000000012 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000012 /* SharedStore.swift */; };
+		BB0001000000000000000013 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000013 /* SettingsView.swift */; };
 		BB0002000000000000000001 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000012 /* SharedStore.swift */; };
 		BB0002000000000000000002 /* PetickerWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000001 /* PetickerWidgetBundle.swift */; };
 		BB0002000000000000000003 /* PetickerWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000002 /* PetickerWidget.swift */; };
@@ -70,6 +71,7 @@
 		AA0001000000000000000010 /* StickerStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerStyler.swift; sourceTree = "<group>"; };
 		AA0001000000000000000011 /* MakePetickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakePetickerView.swift; sourceTree = "<group>"; };
 		AA0001000000000000000012 /* SharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStore.swift; sourceTree = "<group>"; };
+		AA0001000000000000000013 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AA0002000000000000000001 /* PetickerWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetickerWidgetBundle.swift; sourceTree = "<group>"; };
 		AA0002000000000000000002 /* PetickerWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetickerWidget.swift; sourceTree = "<group>"; };
 		AA0002000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -151,6 +153,7 @@
 				AA0001000000000000000010 /* StickerStyler.swift */,
 				AA0001000000000000000011 /* MakePetickerView.swift */,
 				AA0001000000000000000012 /* SharedStore.swift */,
+				AA0001000000000000000013 /* SettingsView.swift */,
 				AA0002000000000000000005 /* Peticker.entitlements */,
 				957FCB1BE3ED4B00913C6D7A /* Assets.xcassets */,
 				301F284A657D475F94E96A56 /* Preview Content */,
@@ -272,6 +275,7 @@
 				BB0001000000000000000010 /* StickerStyler.swift in Sources */,
 				BB0001000000000000000011 /* MakePetickerView.swift in Sources */,
 				BB0001000000000000000012 /* SharedStore.swift in Sources */,
+				BB0001000000000000000013 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
