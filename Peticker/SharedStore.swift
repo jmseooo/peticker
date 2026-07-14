@@ -57,23 +57,19 @@ enum SharedStore {
     }
 
     /// 완성된 스티커를 저장. 위젯 메모리 한도(약 30MB)를 넘지 않도록 저장 시 축소한다.
-    /// 저장 후 위젯 타임라인 갱신을 요청. 성공 여부 반환.
+    /// 완성 스티커를 저장. 성공 여부 반환.
+    /// 위젯 갱신은 호출부(saveAndClose)에서 모든 저장 후 한 번만 요청한다
+    /// — 여기서도 부르면 DONE 한 번에 갱신이 여러 번 나가 위젯 새로고침 예산을 낭비한다.
     @discardableResult
     static func saveSticker(_ image: UIImage) -> Bool {
         guard let url = stickerURL else { return false }
         // 원본 해상도 그대로 두면 위젯이 디코딩하다 강제종료되므로 최대 1000px로 축소
         let resized = downscaled(image, maxPixel: 1000)
         guard let data = resized.pngData() else { return false }
-        do {
-            try data.write(to: url, options: .atomic)
-            WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
-            return true
-        } catch {
-            return false
-        }
+        return (try? data.write(to: url, options: .atomic)) != nil
     }
 
-    /// 위젯 배경을 저장하고 위젯 갱신을 요청.
+    /// 위젯 배경을 저장. (갱신은 saveAndClose에서 한 번만 요청 — 위 saveSticker 설명 참고)
     /// - name: BackgroundStyle rawValue (앱에서 다시 편집 시 복원용)
     /// - patternAsset: 패턴 에셋 이름 (단색이면 nil)
     /// - color: 바탕색 (단색 배경·폴백)
@@ -87,7 +83,6 @@ enum SharedStore {
         }
         setColor(color, forKey: backgroundColorKey)
         setColor(foreground, forKey: backgroundForegroundKey)
-        WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
     }
 
     private static func setColor(_ color: UIColor, forKey key: String) {
@@ -169,11 +164,16 @@ enum SharedStore {
     /// 위젯에서 사용 — 저장된 스티커를 ImageIO로 다운샘플링해 작은 PNG 데이터로 반환.
     /// 원본이 크더라도 전체 비트맵을 메모리에 올리지 않아 위젯 한도 안에서 안전하다.
     static func widgetImageData(maxPixel: CGFloat = 600) -> Data? {
+        // URL이 아니라 매번 파일 바이트를 새로 읽어 디코딩한다.
+        // CGImageSourceCreateWithURL은 같은 경로의 갱신된 파일을 캐시된 옛 이미지로
+        // 돌려줄 수 있어, 편집 후에도 위젯이 예전 스티커를 계속 보이는 원인이 된다.
         guard let url = stickerURL,
-              let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+              let fileData = try? Data(contentsOf: url),
+              let source = CGImageSourceCreateWithData(fileData as CFData, nil) else { return nil }
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCache: false,
             kCGImageSourceThumbnailMaxPixelSize: maxPixel
         ]
         guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {

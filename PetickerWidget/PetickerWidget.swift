@@ -66,9 +66,52 @@ struct StickerProvider: TimelineProvider {
 }
 
 struct PetickerWidgetEntryView: View {
+    @Environment(\.widgetFamily) private var family
     var entry: StickerEntry
 
+    // containerBackground는 반드시 위젯 뷰 최상단에 둔다.
+    // switch 분기 안쪽에 두면 WidgetKit이 못 찾아 실기기에서 회색 플레이스홀더로 떨어진다.
     var body: some View {
+        Group {
+            if family == .accessoryCircular {
+                lockScreenCircular
+            } else {
+                homeScreen
+            }
+        }
+        .containerBackground(for: .widget) {
+            if family == .accessoryCircular {
+                AccessoryWidgetBackground()
+            } else if let pattern = entry.backgroundPattern {
+                // 앱 Background 팔레트에서 고른 패턴 이미지
+                Image(pattern).resizable().scaledToFill()
+            } else {
+                // 단색 배경
+                entry.background
+            }
+        }
+    }
+
+    // 잠금화면 원형 위젯. iOS는 잠금화면 위젯을 vibrant(단색 재질)로만 렌더한다.
+    // 사진의 명암이 비쳐 지저분해지지 않도록, 알파(모양)만 남겨 단색으로 꽉 채운 실루엣으로 그린다.
+    private var lockScreenCircular: some View {
+        ZStack {
+            if let data = entry.imageData, let image = UIImage(data: data) {
+                Image(uiImage: image)
+                    .renderingMode(.template)   // RGB 무시, 불투명 영역을 단색으로 채움
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(.white)
+                    .padding(3)
+            } else {
+                Image(systemName: "pawprint.fill")
+                    .font(.system(size: 22))
+            }
+        }
+    }
+
+    // 홈 화면 위젯 (배터리 + 스티커 + 배경색/패턴)
+    private var homeScreen: some View {
         GeometryReader { geo in
             ZStack {
                 // 배터리 퍼센트 — 위젯 상단 (앱 미리보기와 동일한 구성)
@@ -119,16 +162,6 @@ struct PetickerWidgetEntryView: View {
             // GeometryReader는 자식을 좌상단에 두므로, 위젯 전체를 채워 중앙 정렬되게 함
             .frame(width: geo.size.width, height: geo.size.height)
         }
-        // 앱의 Background 팔레트에서 고른 배경 — 패턴이면 이미지, 아니면 단색.
-        // (iOS는 서드파티 위젯의 '진짜 투명'은 막지만 배경 지정은 정식 지원한다.)
-        // 시스템이 위젯 모서리에 맞춰 자동으로 클리핑한다.
-        .containerBackground(for: .widget) {
-            if let pattern = entry.backgroundPattern {
-                Image(pattern).resizable().scaledToFill()
-            } else {
-                entry.background
-            }
-        }
     }
 }
 
@@ -138,13 +171,13 @@ struct PetickerWidget: Widget {
             PetickerWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Peticker")
-        .description("반려동물 스티커를 홈 화면에 표시합니다.")
-        .supportedFamilies([.systemSmall])
+        .description("반려동물 스티커를 홈 화면·잠금화면에 표시합니다.")
+        .supportedFamilies([.systemSmall, .accessoryCircular])
         .contentMarginsDisabled()   // 투명 배경 위에 스티커가 꽉 차게
     }
 }
 
-#Preview(as: .systemSmall) {
+#Preview(as: .accessoryCircular) {
     PetickerWidget()
 } timeline: {
     StickerEntry(date: Date(), imageData: nil, background: .white, backgroundPattern: nil, foreground: .black, batteryPercent: 100, placement: nil)

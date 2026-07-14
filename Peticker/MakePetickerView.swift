@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import WidgetKit
 
 // 사진 선택 후 제작 화면으로 넘겨줄 원본 이미지 래퍼
 struct PickedPhoto: Identifiable {
@@ -838,6 +839,8 @@ struct MakePetickerView: View {
         if let sticker {
             SharedStore.saveSticker(sticker)
         }
+        // 모든 저장이 끝난 뒤 홈·잠금화면 위젯을 한 번 더 확실히 갱신
+        WidgetCenter.shared.reloadAllTimelines()
         onClose()
     }
 }
