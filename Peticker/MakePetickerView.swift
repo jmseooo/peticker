@@ -297,12 +297,13 @@ struct StickerCircleLayout {
     }
 }
 
-/// 사용자가 핀치·드래그로 정한 스티커 배치. 지름 대비 비율이라 원/위젯 크기와 무관하다.
+/// 사용자가 핀치·드래그·회전으로 정한 스티커 배치. 지름 대비 비율이라 원/위젯 크기와 무관하다.
 /// 스티커는 한 변이 `boxRatio × 지름`인 정사각 프레임에 scaledToFit으로 들어가고,
-/// 원 중심에서 (offset × 지름)만큼 이동한다.
+/// 원 중심에서 (offset × 지름)만큼 이동한 뒤 rotation만큼 돌아간다.
 struct StickerPlacement: Equatable {
     var boxRatio: CGFloat        // 정사각 프레임 한 변 / 지름
     var offset: CGSize           // 원 중심 기준 이동량 / 지름
+    var rotation: Double = 0     // 회전각(도). 기존 저장 데이터엔 없었으므로 기본값 0.
 
     static let scaleRange: ClosedRange<CGFloat> = 0.15...3.0
     static let offsetLimit: CGFloat = 1.0   // 각 축으로 지름의 ±1배까지 (원 밖은 크롭)
@@ -322,14 +323,19 @@ struct StickerPlacement: Equatable {
             offset: CGSize(
                 width: min(max(offset.width, -Self.offsetLimit), Self.offsetLimit),
                 height: min(max(offset.height, -Self.offsetLimit), Self.offsetLimit)
-            )
+            ),
+            rotation: rotation
         )
     }
 
     /// 공유 저장소에서 읽어온 변환. 없으면 nil.
     static func saved() -> StickerPlacement? {
         guard let t = SharedStore.stickerTransform() else { return nil }
-        return StickerPlacement(boxRatio: t.boxRatio, offset: CGSize(width: t.offsetX, height: t.offsetY))
+        return StickerPlacement(
+            boxRatio: t.boxRatio,
+            offset: CGSize(width: t.offsetX, height: t.offsetY),
+            rotation: t.rotation
+        )
     }
 }
 
@@ -363,10 +369,11 @@ struct MakePetickerView: View {
     @State private var pickerItem: PhotosPickerItem?
     @State private var saveErrorMessage: String?      // 저장 실패 시 사용자에게 보여줄 메시지
 
-    // 스티커 배치 — 핀치(크기)·드래그(위치). 원 밖은 클리핑된다.
+    // 스티커 배치 — 핀치(크기)·드래그(위치)·회전. 원 밖은 클리핑된다.
     @State private var placement: StickerPlacement?  // nil이면 아직 자동 배치 미확정
     @GestureState private var pinch: CGFloat = 1     // 진행 중 핀치 배율
     @GestureState private var pan: CGSize = .zero    // 진행 중 드래그(지름 대비 비율)
+    @GestureState private var spin: Angle = .zero    // 진행 중 회전각
     private let initialPlacement: StickerPlacement?  // 다시 편집 시 이어받을 배치
 
     init(
@@ -533,12 +540,13 @@ struct MakePetickerView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    // 지금 화면에 반영할 배치 (진행 중인 핀치·드래그를 얹는다)
+    // 지금 화면에 반영할 배치 (진행 중인 핀치·드래그·회전을 얹는다)
     private var livePlacement: StickerPlacement {
         let base = placement ?? .fitted(metrics)
         return StickerPlacement(
             boxRatio: base.boxRatio * pinch,
-            offset: CGSize(width: base.offset.width + pan.width, height: base.offset.height + pan.height)
+            offset: CGSize(width: base.offset.width + pan.width, height: base.offset.height + pan.height),
+            rotation: base.rotation + spin.degrees
         )
     }
 
@@ -557,6 +565,7 @@ struct MakePetickerView: View {
 
                 stickerImage
                     .frame(width: box, height: box)
+                    .rotationEffect(.degrees(p.rotation))
                     .offset(x: p.offset.width * d, y: p.offset.height * d)
             }
             .frame(width: d, height: d)
@@ -591,7 +600,7 @@ struct MakePetickerView: View {
         .frame(width: d, height: d)
     }
 
-    // 핀치(크기) + 드래그(위치). 두 제스처를 동시에 인식한다.
+    // 핀치(크기) + 드래그(위치) + 회전. 세 제스처를 동시에 인식한다.
     private func manipulationGesture(diameter d: CGFloat) -> some Gesture {
         let magnify = MagnifyGesture()
             .updating($pinch) { value, state, _ in state = value.magnification }
@@ -610,7 +619,14 @@ struct MakePetickerView: View {
                 base.offset.height += value.translation.height / d
                 placement = base.clamped
             }
-        return magnify.simultaneously(with: drag)
+        let rotate = RotateGesture()
+            .updating($spin) { value, state, _ in state = value.rotation }
+            .onEnded { value in
+                var base = placement ?? .fitted(metrics)
+                base.rotation += value.rotation.degrees
+                placement = base.clamped
+            }
+        return magnify.simultaneously(with: drag).simultaneously(with: rotate)
     }
 
     // 원 위 딤 + 사진 다시 고르기 버튼. 바깥(딤)을 탭하면 닫힌다.
@@ -852,7 +868,8 @@ struct MakePetickerView: View {
             SharedStore.saveStickerTransform(
                 boxRatio: placement.boxRatio,
                 offsetX: placement.offset.width,
-                offsetY: placement.offset.height
+                offsetY: placement.offset.height,
+                rotation: placement.rotation
             )
         }
         let savedOriginal = SharedStore.saveOriginal(currentImage)

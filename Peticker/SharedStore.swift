@@ -122,17 +122,19 @@ enum SharedStore {
         return UIImage(data: data)
     }
 
-    /// 스티커 배치 변환을 저장 (지름 대비 비율). 위젯이 읽어 같은 배치로 그린다.
-    static func saveStickerTransform(boxRatio: CGFloat, offsetX: CGFloat, offsetY: CGFloat) {
-        defaults?.set([Double(boxRatio), Double(offsetX), Double(offsetY)], forKey: stickerTransformKey)
+    /// 스티커 배치 변환을 저장 (지름 대비 비율 + 회전각). 위젯이 읽어 같은 배치로 그린다.
+    static func saveStickerTransform(boxRatio: CGFloat, offsetX: CGFloat, offsetY: CGFloat, rotation: Double) {
+        defaults?.set([Double(boxRatio), Double(offsetX), Double(offsetY), rotation], forKey: stickerTransformKey)
     }
 
     /// 저장된 스티커 배치 변환. 아직 배치한 적 없으면 nil (호출부에서 자동 배치로 대체).
-    static func stickerTransform() -> (boxRatio: CGFloat, offsetX: CGFloat, offsetY: CGFloat)? {
-        guard let v = defaults?.array(forKey: stickerTransformKey) as? [Double], v.count == 3 else {
+    /// 회전 추가 전에 저장된 값(길이 3)도 회전 0으로 읽는다.
+    static func stickerTransform() -> (boxRatio: CGFloat, offsetX: CGFloat, offsetY: CGFloat, rotation: Double)? {
+        guard let v = defaults?.array(forKey: stickerTransformKey) as? [Double], v.count >= 3 else {
             return nil
         }
-        return (CGFloat(v[0]), CGFloat(v[1]), CGFloat(v[2]))
+        let rotation = v.count >= 4 ? v[3] : 0
+        return (CGFloat(v[0]), CGFloat(v[1]), CGFloat(v[2]), rotation)
     }
 
     /// 다시 편집할 때 이어받을 테두리 색 이름을 저장. 위젯과 무관하므로 갱신은 요청하지 않는다.

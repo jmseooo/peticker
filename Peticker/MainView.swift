@@ -58,6 +58,7 @@ struct WidgetCircle: View {
             let box = p.boxRatio * diameter
             image
                 .frame(width: box, height: box)
+                .rotationEffect(.degrees(p.rotation))
                 .offset(x: p.offset.width * diameter, y: p.offset.height * diameter)
         } else {
             // 예전 스티커(배치 정보 없음) — 자동 배치
