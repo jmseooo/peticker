@@ -361,6 +361,7 @@ struct MakePetickerView: View {
     @State private var showChangeButton = false      // 원 탭 시 딤 + Change 버튼 표시
     @State private var showPhotoPicker = false       // Change 버튼 → 사진 선택기
     @State private var pickerItem: PhotosPickerItem?
+    @State private var saveErrorMessage: String?      // 저장 실패 시 사용자에게 보여줄 메시지
 
     // 스티커 배치 — 핀치(크기)·드래그(위치). 원 밖은 클리핑된다.
     @State private var placement: StickerPlacement?  // nil이면 아직 자동 배치 미확정
@@ -398,6 +399,18 @@ struct MakePetickerView: View {
         // (fullScreenCover에선 GeometryProxy의 safeAreaInsets를 신뢰할 수 없다)
         .ignoresSafeArea()
         .background(Color.bgBase.ignoresSafeArea())
+        .alert(
+            "Save Failed",
+            isPresented: Binding(
+                get: { saveErrorMessage != nil },
+                set: { if !$0 { saveErrorMessage = nil } }
+            ),
+            presenting: saveErrorMessage
+        ) { _ in
+            Button("OK") { saveErrorMessage = nil }
+        } message: { message in
+            Text(message)
+        }
         .task {
             await processImage()
         }
@@ -799,16 +812,18 @@ struct MakePetickerView: View {
     }
 
     // 현재 선택된 색으로 테두리 다시 입힘 (누끼 결과 재사용 — 빠름). none이면 테두리 없이 누끼만.
+    // 누끼(Vision)나 스트로크 합성이 실패해도 sticker가 nil로 남지 않도록 원본으로 폴백한다 —
+    // 그렇지 않으면 DONE을 눌러도 SharedStore에 저장되지 않아 메인 화면에 반영되지 않는다.
     private func restroke() async {
-        guard let cutout else { return }
+        let base = cutout ?? currentImage
         let restroked: UIImage?
         if selectedStroke.isNone {
-            restroked = cutout
+            restroked = base
         } else {
-            restroked = await StickerStyler.addStroke(to: cutout, color: selectedStroke.uiColor)
+            restroked = await StickerStyler.addStroke(to: base, color: selectedStroke.uiColor)
         }
         let newMetrics = restroked.flatMap(StickerMetrics.analyze)
-        sticker = restroked
+        sticker = restroked ?? base
         metrics = newMetrics
         // 첫 배치가 아직 없으면 정한다 — 다시 편집이면 이전 배치, 아니면 자동 배치.
         // 이미 사용자가 핀치·드래그로 옮겼다면(placement != nil) 색만 바뀐 것이므로 유지한다.
@@ -819,8 +834,13 @@ struct MakePetickerView: View {
 
     // DONE — 완성 스티커·배경색·배치를 공유 저장소에 저장(위젯이 읽어 표시)한 뒤 화면 닫기.
     // 원본 사진과 테두리 색도 함께 남겨, 메인 화면에서 스티커를 탭하면 다시 편집할 수 있게 한다.
+    // 저장이 실패하면(App Group 컨테이너에 접근 못하는 경우 등) 화면을 닫지 않고 알려준다 —
+    // 그렇지 않으면 메인 화면이 아무 변화 없이 조용히 되돌아가 마치 아무것도 안 된 것처럼 보인다.
     private func saveAndClose() {
-        SharedStore.saveOriginal(currentImage)
+        guard let sticker else {
+            saveErrorMessage = "No sticker to save."
+            return
+        }
         SharedStore.saveOutlineName(selectedStroke.rawValue)
         SharedStore.saveBackground(
             name: selectedBackground.rawValue,
@@ -835,8 +855,11 @@ struct MakePetickerView: View {
                 offsetY: placement.offset.height
             )
         }
-        if let sticker {
-            SharedStore.saveSticker(sticker)
+        let savedOriginal = SharedStore.saveOriginal(currentImage)
+        let savedSticker = SharedStore.saveSticker(sticker)
+        guard savedOriginal, savedSticker else {
+            saveErrorMessage = "Couldn't save to the shared storage. Check that the App Group container is accessible (container URL: \(SharedStore.containerURL?.path ?? "nil"))."
+            return
         }
         onClose()
     }
