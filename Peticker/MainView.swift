@@ -13,6 +13,8 @@ struct WidgetCircle: View {
     let foreground: Color
     let batteryPercent: Int
 
+    @AppStorage("showBatteryPercent") private var showBatteryPercent = true
+
     var body: some View {
         Circle()
             .fill(sticker == nil ? Color.brandCyan : Color.clear)
@@ -31,13 +33,15 @@ struct WidgetCircle: View {
                         // 스티커 — 사용자 배치가 있으면 그대로, 없으면 자동 배치. 원 밖은 잘린다.
                         stickerLayer(sticker)
 
-                        // 배터리 퍼센트 — 원 상단 근처 (스티커 위)
-                        VStack(spacing: 0) {
-                            Text("\(batteryPercent)%")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(foreground)
-                                .padding(.top, diameter * 0.117)   // 제작 화면과 동일 비율
-                            Spacer()
+                        // 배터리 퍼센트 — 원 상단 근처 (스티커 위). 설정에서 끄면 숨긴다.
+                        if showBatteryPercent {
+                            VStack(spacing: 0) {
+                                Text("\(batteryPercent)%")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundStyle(foreground)
+                                    .padding(.top, diameter * 0.117)   // 제작 화면과 동일 비율
+                                Spacer()
+                            }
                         }
                     }
                     .frame(width: diameter, height: diameter)

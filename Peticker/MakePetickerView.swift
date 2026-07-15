@@ -358,6 +358,8 @@ enum ScreenSafeArea {
 struct MakePetickerView: View {
     let onClose: () -> Void
 
+    @AppStorage("showBatteryPercent") private var showBatteryPercent = true
+
     @State private var currentImage: UIImage         // 현재 처리 대상 원본(사진 변경 시 교체)
     @State private var cutout: UIImage?              // 누끼 결과(테두리 없음)
     @State private var sticker: UIImage?             // 현재 색 테두리 적용 결과
@@ -579,8 +581,8 @@ struct MakePetickerView: View {
                 withAnimation(.easeInOut(duration: 0.2)) { showChangeButton.toggle() }
             }
 
-            // 배터리 퍼센트 — 원 상단 근처 (변경 모드에선 숨김)
-            if !showChangeButton {
+            // 배터리 퍼센트 — 원 상단 근처 (변경 모드거나 설정에서 껐으면 숨김)
+            if !showChangeButton && showBatteryPercent {
                 VStack(spacing: 0) {
                     Text("\(BatteryMonitor.shared.percent)%")
                         .font(.system(size: 15, weight: .bold))
