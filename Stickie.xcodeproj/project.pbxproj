@@ -324,7 +324,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Stickie;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Peticker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -453,7 +453,7 @@
 				CODE_SIGN_ENTITLEMENTS = StickieWidget/StickieWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 2C7Y5A7W39;
+				DEVELOPMENT_TEAM = Y4J3ZHQ9H4;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = StickieWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -463,7 +463,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Stickie.StickieWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Peticker.StickieWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -478,7 +478,7 @@
 				CODE_SIGN_ENTITLEMENTS = StickieWidget/StickieWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 2C7Y5A7W39;
+				DEVELOPMENT_TEAM = Y4J3ZHQ9H4;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = StickieWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -488,7 +488,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Stickie.StickieWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Peticker.StickieWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -521,7 +521,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Stickie;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Peticker;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
