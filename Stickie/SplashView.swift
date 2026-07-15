@@ -65,7 +65,7 @@ struct SplashView: View {
             VStack {
                 Spacer()
                 Text("Make your own Stickie!")
-                    .font(.petickerTagline)
+                    .font(.stickieTagline)
                     .foregroundStyle(Color.gray)
                     .opacity(showSmallLogo ? 1 : 0)
                     .padding(.bottom, 2)

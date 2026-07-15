@@ -205,7 +205,7 @@ struct MainView: View {
             SettingsView { showSettings = false }
         }
         .fullScreenCover(item: $pickedPhoto) { photo in
-            MakePetickerView(originalImage: photo.image, initialPlacement: photo.placement) {
+            MakeStickieView(originalImage: photo.image, initialPlacement: photo.placement) {
                 let isFirstSticker = savedSticker == nil   // 완성 전에 스티커가 없었으면 첫 제작
                 pickedPhoto = nil
                 selectedItem = nil

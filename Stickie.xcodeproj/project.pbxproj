@@ -18,16 +18,16 @@
 		BB0001000000000000000008 /* MainGuideOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000008 /* MainGuideOverlay.swift */; };
 		BB0001000000000000000009 /* BackgroundRemover.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000009 /* BackgroundRemover.swift */; };
 		BB0001000000000000000010 /* StickerStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000010 /* StickerStyler.swift */; };
-		BB0001000000000000000011 /* MakePetickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000011 /* MakePetickerView.swift */; };
+		BB0001000000000000000011 /* MakeStickieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000011 /* MakeStickieView.swift */; };
 		BB0001000000000000000012 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000012 /* SharedStore.swift */; };
 		BB0001000000000000000013 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000013 /* SettingsView.swift */; };
 		BB0002000000000000000001 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000012 /* SharedStore.swift */; };
-		BB0002000000000000000002 /* PetickerWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000001 /* PetickerWidgetBundle.swift */; };
-		BB0002000000000000000003 /* PetickerWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000002 /* PetickerWidget.swift */; };
-		BB0002000000000000000004 /* PetickerWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000006 /* PetickerWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BB0002000000000000000002 /* StickieWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000001 /* StickieWidgetBundle.swift */; };
+		BB0002000000000000000003 /* StickieWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000002 /* StickieWidget.swift */; };
+		BB0002000000000000000004 /* StickieWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000006 /* StickieWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BB0002000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000007 /* Assets.xcassets */; };
 		E1456F25C4C649CC8EFDA39E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60F0B9821E74022B5D71E80 /* ContentView.swift */; };
-		F89C5345866D4AD7AC44AE59 /* PetickerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08F6380E9CE347968D28092B /* PetickerApp.swift */; };
+		F89C5345866D4AD7AC44AE59 /* StickieApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08F6380E9CE347968D28092B /* StickieApp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,7 +36,7 @@
 			containerPortal = F1213DCCFEB44C1BAF75FE53 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = DD0002000000000000000001;
-			remoteInfo = PetickerWidgetExtension;
+			remoteInfo = StickieWidgetExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -47,7 +47,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				BB0002000000000000000004 /* PetickerWidgetExtension.appex in Embed Foundation Extensions */,
+				BB0002000000000000000004 /* StickieWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -55,8 +55,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		08F6380E9CE347968D28092B /* PetickerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetickerApp.swift; sourceTree = "<group>"; };
-		15F70F2AEC3B4A0A93074B84 /* Peticker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Peticker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		08F6380E9CE347968D28092B /* StickieApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickieApp.swift; sourceTree = "<group>"; };
+		15F70F2AEC3B4A0A93074B84 /* Stickie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Stickie.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E5F00006DE24B5A815A36E0 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		957FCB1BE3ED4B00913C6D7A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A60F0B9821E74022B5D71E80 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -69,15 +69,15 @@
 		AA0001000000000000000008 /* MainGuideOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainGuideOverlay.swift; sourceTree = "<group>"; };
 		AA0001000000000000000009 /* BackgroundRemover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundRemover.swift; sourceTree = "<group>"; };
 		AA0001000000000000000010 /* StickerStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerStyler.swift; sourceTree = "<group>"; };
-		AA0001000000000000000011 /* MakePetickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakePetickerView.swift; sourceTree = "<group>"; };
+		AA0001000000000000000011 /* MakeStickieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakeStickieView.swift; sourceTree = "<group>"; };
 		AA0001000000000000000012 /* SharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStore.swift; sourceTree = "<group>"; };
 		AA0001000000000000000013 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		AA0002000000000000000001 /* PetickerWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetickerWidgetBundle.swift; sourceTree = "<group>"; };
-		AA0002000000000000000002 /* PetickerWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetickerWidget.swift; sourceTree = "<group>"; };
+		AA0002000000000000000001 /* StickieWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickieWidgetBundle.swift; sourceTree = "<group>"; };
+		AA0002000000000000000002 /* StickieWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickieWidget.swift; sourceTree = "<group>"; };
 		AA0002000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		AA0002000000000000000004 /* PetickerWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PetickerWidget.entitlements; sourceTree = "<group>"; };
-		AA0002000000000000000005 /* Peticker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Peticker.entitlements; sourceTree = "<group>"; };
-		AA0002000000000000000006 /* PetickerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PetickerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0002000000000000000004 /* StickieWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = StickieWidget.entitlements; sourceTree = "<group>"; };
+		AA0002000000000000000005 /* Stickie.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Stickie.entitlements; sourceTree = "<group>"; };
+		AA0002000000000000000006 /* StickieWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StickieWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0002000000000000000007 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -102,8 +102,8 @@
 		2C803CB21B214636832A75F4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				15F70F2AEC3B4A0A93074B84 /* Peticker.app */,
-				AA0002000000000000000006 /* PetickerWidgetExtension.appex */,
+				15F70F2AEC3B4A0A93074B84 /* Stickie.app */,
+				AA0002000000000000000006 /* StickieWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -119,28 +119,28 @@
 		4745C35AE9404076ABE407AC = {
 			isa = PBXGroup;
 			children = (
-				DF259A9D32E44AE6BC8FB882 /* Peticker */,
-				CC0002000000000000000001 /* PetickerWidget */,
+				DF259A9D32E44AE6BC8FB882 /* Stickie */,
+				CC0002000000000000000001 /* StickieWidget */,
 				2C803CB21B214636832A75F4 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		CC0002000000000000000001 /* PetickerWidget */ = {
+		CC0002000000000000000001 /* StickieWidget */ = {
 			isa = PBXGroup;
 			children = (
-				AA0002000000000000000001 /* PetickerWidgetBundle.swift */,
-				AA0002000000000000000002 /* PetickerWidget.swift */,
+				AA0002000000000000000001 /* StickieWidgetBundle.swift */,
+				AA0002000000000000000002 /* StickieWidget.swift */,
 				AA0002000000000000000003 /* Info.plist */,
-				AA0002000000000000000004 /* PetickerWidget.entitlements */,
+				AA0002000000000000000004 /* StickieWidget.entitlements */,
 				AA0002000000000000000007 /* Assets.xcassets */,
 			);
-			path = PetickerWidget;
+			path = StickieWidget;
 			sourceTree = "<group>";
 		};
-		DF259A9D32E44AE6BC8FB882 /* Peticker */ = {
+		DF259A9D32E44AE6BC8FB882 /* Stickie */ = {
 			isa = PBXGroup;
 			children = (
-				08F6380E9CE347968D28092B /* PetickerApp.swift */,
+				08F6380E9CE347968D28092B /* StickieApp.swift */,
 				A60F0B9821E74022B5D71E80 /* ContentView.swift */,
 				AA0001000000000000000003 /* AppRouter.swift */,
 				AA0001000000000000000001 /* Colors.swift */,
@@ -151,22 +151,22 @@
 				AA0001000000000000000008 /* MainGuideOverlay.swift */,
 				AA0001000000000000000009 /* BackgroundRemover.swift */,
 				AA0001000000000000000010 /* StickerStyler.swift */,
-				AA0001000000000000000011 /* MakePetickerView.swift */,
+				AA0001000000000000000011 /* MakeStickieView.swift */,
 				AA0001000000000000000012 /* SharedStore.swift */,
 				AA0001000000000000000013 /* SettingsView.swift */,
-				AA0002000000000000000005 /* Peticker.entitlements */,
+				AA0002000000000000000005 /* Stickie.entitlements */,
 				957FCB1BE3ED4B00913C6D7A /* Assets.xcassets */,
 				301F284A657D475F94E96A56 /* Preview Content */,
 			);
-			path = Peticker;
+			path = Stickie;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		2F47110B051A4EC08089BFAC /* Peticker */ = {
+		2F47110B051A4EC08089BFAC /* Stickie */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AAAAAA000002000000000002 /* Build configuration list for PBXNativeTarget "Peticker" */;
+			buildConfigurationList = AAAAAA000002000000000002 /* Build configuration list for PBXNativeTarget "Stickie" */;
 			buildPhases = (
 				A5AE1A2C4FDE46D7BDC4D3AC /* Sources */,
 				AAAAAA000003000000000003 /* Frameworks */,
@@ -178,14 +178,14 @@
 			dependencies = (
 				DD0002000000000000000006 /* PBXTargetDependency */,
 			);
-			name = Peticker;
-			productName = Peticker;
-			productReference = 15F70F2AEC3B4A0A93074B84 /* Peticker.app */;
+			name = Stickie;
+			productName = Stickie;
+			productReference = 15F70F2AEC3B4A0A93074B84 /* Stickie.app */;
 			productType = "com.apple.product-type.application";
 		};
-		DD0002000000000000000001 /* PetickerWidgetExtension */ = {
+		DD0002000000000000000001 /* StickieWidgetExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = DD0002000000000000000008 /* Build configuration list for PBXNativeTarget "PetickerWidgetExtension" */;
+			buildConfigurationList = DD0002000000000000000008 /* Build configuration list for PBXNativeTarget "StickieWidgetExtension" */;
 			buildPhases = (
 				DD0002000000000000000002 /* Sources */,
 				DD0002000000000000000003 /* Frameworks */,
@@ -195,9 +195,9 @@
 			);
 			dependencies = (
 			);
-			name = PetickerWidgetExtension;
-			productName = PetickerWidgetExtension;
-			productReference = AA0002000000000000000006 /* PetickerWidgetExtension.appex */;
+			name = StickieWidgetExtension;
+			productName = StickieWidgetExtension;
+			productReference = AA0002000000000000000006 /* StickieWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -218,7 +218,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AAAAAA000001000000000001 /* Build configuration list for PBXProject "Peticker" */;
+			buildConfigurationList = AAAAAA000001000000000001 /* Build configuration list for PBXProject "Stickie" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -231,8 +231,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				2F47110B051A4EC08089BFAC /* Peticker */,
-				DD0002000000000000000001 /* PetickerWidgetExtension */,
+				2F47110B051A4EC08089BFAC /* Stickie */,
+				DD0002000000000000000001 /* StickieWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -263,7 +263,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1456F25C4C649CC8EFDA39E /* ContentView.swift in Sources */,
-				F89C5345866D4AD7AC44AE59 /* PetickerApp.swift in Sources */,
+				F89C5345866D4AD7AC44AE59 /* StickieApp.swift in Sources */,
 				BB0001000000000000000001 /* Colors.swift in Sources */,
 				BB0001000000000000000002 /* Typography.swift in Sources */,
 				BB0001000000000000000003 /* AppRouter.swift in Sources */,
@@ -273,7 +273,7 @@
 				BB0001000000000000000008 /* MainGuideOverlay.swift in Sources */,
 				BB0001000000000000000009 /* BackgroundRemover.swift in Sources */,
 				BB0001000000000000000010 /* StickerStyler.swift in Sources */,
-				BB0001000000000000000011 /* MakePetickerView.swift in Sources */,
+				BB0001000000000000000011 /* MakeStickieView.swift in Sources */,
 				BB0001000000000000000012 /* SharedStore.swift in Sources */,
 				BB0001000000000000000013 /* SettingsView.swift in Sources */,
 			);
@@ -283,8 +283,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BB0002000000000000000002 /* PetickerWidgetBundle.swift in Sources */,
-				BB0002000000000000000003 /* PetickerWidget.swift in Sources */,
+				BB0002000000000000000002 /* StickieWidgetBundle.swift in Sources */,
+				BB0002000000000000000003 /* StickieWidget.swift in Sources */,
 				BB0002000000000000000001 /* SharedStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -294,7 +294,7 @@
 /* Begin PBXTargetDependency section */
 		DD0002000000000000000006 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = DD0002000000000000000001 /* PetickerWidgetExtension */;
+			target = DD0002000000000000000001 /* StickieWidgetExtension */;
 			targetProxy = DD0002000000000000000007 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -305,11 +305,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Peticker/Peticker.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Stickie/Stickie.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Peticker/Preview Content\"";
-				DEVELOPMENT_TEAM = Y4J3ZHQ9H4;
+				DEVELOPMENT_ASSET_PATHS = "\"Stickie/Preview Content\"";
+				DEVELOPMENT_TEAM = 2C7Y5A7W39;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "반려동물 사진으로 위젯 스티커를 만들기 위해 사진 라이브러리에 접근합니다.";
@@ -324,7 +324,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Peticker;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Stickie;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -450,12 +450,12 @@
 		DD0002000000000000000009 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = PetickerWidget/PetickerWidget.entitlements;
+				CODE_SIGN_ENTITLEMENTS = StickieWidget/StickieWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Y4J3ZHQ9H4;
+				DEVELOPMENT_TEAM = 2C7Y5A7W39;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = PetickerWidget/Info.plist;
+				INFOPLIST_FILE = StickieWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -463,7 +463,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Peticker.PetickerWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Stickie.StickieWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -475,12 +475,12 @@
 		DD0002000000000000000010 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = PetickerWidget/PetickerWidget.entitlements;
+				CODE_SIGN_ENTITLEMENTS = StickieWidget/StickieWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Y4J3ZHQ9H4;
+				DEVELOPMENT_TEAM = 2C7Y5A7W39;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = PetickerWidget/Info.plist;
+				INFOPLIST_FILE = StickieWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -488,7 +488,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Peticker.PetickerWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Stickie.StickieWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -502,11 +502,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Peticker/Peticker.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Stickie/Stickie.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Peticker/Preview Content\"";
-				DEVELOPMENT_TEAM = Y4J3ZHQ9H4;
+				DEVELOPMENT_ASSET_PATHS = "\"Stickie/Preview Content\"";
+				DEVELOPMENT_TEAM = 2C7Y5A7W39;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "반려동물 사진으로 위젯 스티커를 만들기 위해 사진 라이브러리에 접근합니다.";
@@ -521,7 +521,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Peticker;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jinminseo.Stickie;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -532,7 +532,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AAAAAA000001000000000001 /* Build configuration list for PBXProject "Peticker" */ = {
+		AAAAAA000001000000000001 /* Build configuration list for PBXProject "Stickie" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8632A558EEF74A99AF74E6BF /* Debug */,
@@ -541,7 +541,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AAAAAA000002000000000002 /* Build configuration list for PBXNativeTarget "Peticker" */ = {
+		AAAAAA000002000000000002 /* Build configuration list for PBXNativeTarget "Stickie" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				81D3B238379340D2A35E6E66 /* Debug */,
@@ -550,7 +550,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		DD0002000000000000000008 /* Build configuration list for PBXNativeTarget "PetickerWidgetExtension" */ = {
+		DD0002000000000000000008 /* Build configuration list for PBXNativeTarget "StickieWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DD0002000000000000000009 /* Debug */,

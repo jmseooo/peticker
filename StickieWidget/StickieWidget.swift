@@ -69,7 +69,7 @@ struct StickerProvider: TimelineProvider {
     }
 }
 
-struct PetickerWidgetEntryView: View {
+struct StickieWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
     var entry: StickerEntry
 
@@ -172,12 +172,12 @@ struct PetickerWidgetEntryView: View {
     }
 }
 
-struct PetickerWidget: Widget {
+struct StickieWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: SharedStore.widgetKind, provider: StickerProvider()) { entry in
-            PetickerWidgetEntryView(entry: entry)
+            StickieWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("Peticker")
+        .configurationDisplayName("Stickie")
         .description("반려동물 스티커를 홈 화면·잠금화면에 표시합니다.")
         .supportedFamilies([.systemSmall, .accessoryCircular])
         .contentMarginsDisabled()   // 투명 배경 위에 스티커가 꽉 차게
@@ -185,7 +185,7 @@ struct PetickerWidget: Widget {
 }
 
 #Preview(as: .accessoryCircular) {
-    PetickerWidget()
+    StickieWidget()
 } timeline: {
     StickerEntry(date: Date(), imageData: nil, background: .white, backgroundPattern: nil, foreground: .black, batteryPercent: 100, showBatteryPercent: true, placement: nil)
 }
