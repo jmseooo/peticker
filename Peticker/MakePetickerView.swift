@@ -51,7 +51,7 @@ extension SwatchColor {
     }
 }
 
-// 위젯 배경 — 단색 6종 + 패턴 이미지 7종
+// 위젯 배경 — 단색 6종 + 패턴 이미지 8종
 enum BackgroundStyle: String, CaseIterable, Identifiable {
     // 단색 (rawValue = hex)
     case plum   = "5B1445"
@@ -68,6 +68,7 @@ enum BackgroundStyle: String, CaseIterable, Identifiable {
     case heartsCorner = "hearts-corner"
     case stripe       = "stripe"
     case stars        = "stars"
+    case heartBig     = "heart-big"
 
     var id: String { rawValue }
 
@@ -81,6 +82,7 @@ enum BackgroundStyle: String, CaseIterable, Identifiable {
         case .heartsCorner: return "BgHeartsCorner"
         case .stripe:       return "BgStripe"
         case .stars:        return "BgStars"
+        case .heartBig:     return "BgHeartBig"
         default:            return nil
         }
     }
@@ -95,6 +97,7 @@ enum BackgroundStyle: String, CaseIterable, Identifiable {
         case .heartsCorner: return "FFF4FC"
         case .stripe:       return "E629AC"
         case .stars:        return "CBF3F4"
+        case .heartBig:     return "F761C9"
         default:            return rawValue
         }
     }
