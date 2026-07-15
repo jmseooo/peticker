@@ -41,17 +41,17 @@ struct SettingsView: View {
                     )
                         .onChange(of: pushNotificationsEnabled) { _, enabled in
                             guard enabled else { return }
-                            NotificationPermission.request { granted in
+                            Task {
                                 // 시스템에서 거부하면 토글을 다시 끔 — 켜진 채로 남아 실제 권한과 어긋나지 않도록.
-                                pushNotificationsEnabled = granted
+                                pushNotificationsEnabled = await NotificationPermission.request()
                             }
                         }
                         .onAppear {
                             // 설정 화면을 다시 열 때마다 실제 시스템 권한과 토글을 맞춘다
                             // (사용자가 iOS 설정 앱에서 권한을 껐다 켰다 할 수 있으므로).
                             guard pushNotificationsEnabled else { return }
-                            NotificationPermission.currentStatusIsAuthorized { authorized in
-                                pushNotificationsEnabled = authorized
+                            Task {
+                                pushNotificationsEnabled = await NotificationPermission.currentStatusIsAuthorized()
                             }
                         }
                     rowDivider
@@ -158,20 +158,17 @@ struct SettingsView: View {
 // MARK: - 알림 권한
 
 enum NotificationPermission {
-    /// 권한을 요청하고, 사용자가 실제로 허용했는지를 completion으로 알려준다.
-    /// 거부해도 요청 자체는 에러 없이 끝나므로, granted 값으로 토글 상태를 결정해야 한다.
-    static func request(completion: @escaping (Bool) -> Void) {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
-            DispatchQueue.main.async { completion(granted) }
-        }
+    /// 권한을 요청하고, 사용자가 실제로 허용했는지를 반환한다.
+    /// 거부해도 요청 자체는 에러 없이 끝나므로, 반환값으로 토글 상태를 결정해야 한다.
+    static func request() async -> Bool {
+        (try? await UNUserNotificationCenter.current()
+            .requestAuthorization(options: [.alert, .badge, .sound])) ?? false
     }
 
     /// 현재 시스템 알림 권한이 허용 상태인지 확인 (사용자가 iOS 설정에서 나중에 끈 경우 대비).
-    static func currentStatusIsAuthorized(completion: @escaping (Bool) -> Void) {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            let authorized = settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional
-            DispatchQueue.main.async { completion(authorized) }
-        }
+    static func currentStatusIsAuthorized() async -> Bool {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        return settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional
     }
 }
 
