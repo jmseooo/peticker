@@ -53,6 +53,7 @@ struct WidgetCircle: View {
                 }
             }
             .clipShape(Circle())
+            .shadow(color: .black.opacity(0.2), radius: 8, x: 4, y: 4)
     }
 
     @ViewBuilder
@@ -123,7 +124,7 @@ struct MainView: View {
                         .position(x: w * 0.242, y: h * 0.228 + 25)
 
                     // 라임 잠금 슬롯 — 좌하단
-                    LockedSlot(size: 105, color: .brandLime)
+                    LockedSlot(size: 105, color: Color(hex: "A5DC0F"))
                         .position(x: w * 0.340, y: h * 0.843 + 25)
                 }
 
@@ -260,7 +261,7 @@ struct LockedSlot: View {
 #Preview("Locked Slot") {
     HStack(spacing: 40) {
         LockedSlot(size: 149, color: .brandPink)
-        LockedSlot(size: 105, color: .brandLime)
+        LockedSlot(size: 105, color: Color(hex: "A5DC0F"))
     }
     .padding()
     .background(Color.bgBase)
