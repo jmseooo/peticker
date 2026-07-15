@@ -89,6 +89,7 @@ struct MainView: View {
     @State private var widgetBackground: Color = .white   // 제작 화면에서 고른 위젯 배경색
     @State private var widgetPattern: String?             // 배경 패턴 에셋 (있으면 이미지)
     @State private var widgetForeground: Color = .black   // 그 위에 얹는 배터리 표시 색
+    @State private var showAddWidgetGuide = false   // 첫 스티커 완성 직후 "위젯 추가" 안내 팝업
 
     // 저장된 스티커와 배경을 함께 읽어 미리보기를 위젯과 같은 모습으로 맞춘다
     private func reloadWidgetPreview() {
@@ -181,14 +182,35 @@ struct MainView: View {
             .padding(.trailing, 35)
             .padding(.bottom, 40 - 25)
         }
+        .overlay {
+            if showAddWidgetGuide {
+                ZStack {
+                    Color.black.opacity(0.6)
+                        .ignoresSafeArea()
+                    Image("AddWidgetGuide")
+                        .resizable()
+                        .scaledToFit()
+                        .padding(.horizontal, 24)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.25)) { showAddWidgetGuide = false }
+                }
+                .transition(.opacity)
+            }
+        }
         .fullScreenCover(isPresented: $showSettings) {
             SettingsView { showSettings = false }
         }
         .fullScreenCover(item: $pickedPhoto) { photo in
             MakePetickerView(originalImage: photo.image, initialPlacement: photo.placement) {
+                let isFirstSticker = savedSticker == nil   // 완성 전에 스티커가 없었으면 첫 제작
                 pickedPhoto = nil
                 selectedItem = nil
                 reloadWidgetPreview()   // 완성 결과(스티커·배경색·배치)를 원에 반영
+                if isFirstSticker {
+                    withAnimation(.easeInOut(duration: 0.25)) { showAddWidgetGuide = true }
+                }
             }
         }
         .onChange(of: selectedItem) { _, newItem in

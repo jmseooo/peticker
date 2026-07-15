@@ -73,6 +73,7 @@ struct SplashView: View {
         .task {
             #if DEBUG
             UserDefaults.standard.removeObject(forKey: "hasSeenOnboarding")
+            SharedStore.resetForDebug()   // 이전 테스트 스티커 잔재를 지우고 메인 화면을 항상 파란 원으로 시작
             #endif
             // 로고 상태 유지
             try? await Task.sleep(for: .milliseconds(900))

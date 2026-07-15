@@ -190,6 +190,21 @@ enum SharedStore {
         return UIImage(data: data)
     }
 
+    #if DEBUG
+    /// 디버그 빌드 실행마다 이전에 테스트로 만든 스티커·배경·배치가 남아
+    /// 메인 화면에 잔재로 보이는 것을 막기 위해, 앱 시작 시 호출해 전부 초기화한다.
+    static func resetForDebug() {
+        if let url = stickerURL { try? FileManager.default.removeItem(at: url) }
+        if let url = originalURL { try? FileManager.default.removeItem(at: url) }
+        defaults?.removeObject(forKey: outlineNameKey)
+        defaults?.removeObject(forKey: backgroundNameKey)
+        defaults?.removeObject(forKey: backgroundPatternKey)
+        defaults?.removeObject(forKey: backgroundColorKey)
+        defaults?.removeObject(forKey: backgroundForegroundKey)
+        defaults?.removeObject(forKey: stickerTransformKey)
+    }
+    #endif
+
     // 긴 변을 maxPixel 이하로 맞춰 축소 (투명 배경 유지). 이미 작으면 원본 반환.
     private static func downscaled(_ image: UIImage, maxPixel: CGFloat) -> UIImage {
         let longest = max(image.size.width, image.size.height)
