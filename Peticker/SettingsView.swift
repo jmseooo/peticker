@@ -27,12 +27,20 @@ struct SettingsView: View {
                     .padding(.bottom, 28)
 
                 VStack(spacing: 0) {
-                    toggleRow(title: "Battery", isOn: $showBatteryPercent)
+                    toggleRow(
+                        title: "Battery",
+                        subtitle: "Show your battery level on the home widget.",
+                        isOn: $showBatteryPercent
+                    )
                     rowDivider
-                    toggleRow(title: "Push Notifications", isOn: $pushNotificationsEnabled)
-                        .onChange(of: pushNotificationsEnabled) { _, enabled in
-                            if enabled { NotificationPermission.request() }
-                        }
+                    toggleRow(
+                        title: "Push Notifications",
+                        subtitle: "Receive notifications about app updates and announcements.",
+                        isOn: $pushNotificationsEnabled
+                    )
+                    .onChange(of: pushNotificationsEnabled) { _, enabled in
+                        if enabled { NotificationPermission.request() }
+                    }
                     rowDivider
                     actionRow(title: "How to use") { showHowToUse = true }
                     rowDivider
@@ -91,11 +99,16 @@ struct SettingsView: View {
         Divider().background(Color.black.opacity(0.08))
     }
 
-    private func toggleRow(title: String, isOn: Binding<Bool>) -> some View {
+    private func toggleRow(title: String, subtitle: String, isOn: Binding<Bool>) -> some View {
         Toggle(isOn: isOn) {
-            Text(title)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.black)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.black)
+                Text(subtitle)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(Color(hex: "979797"))
+            }
         }
         .tint(.brandLime)
         .padding(.vertical, 16)
