@@ -72,7 +72,6 @@ struct WidgetCircle: View {
 
 struct MainView: View {
     @Environment(AppRouter.self) var router
-    @State private var showComingSoon = false
     @State private var showSettings = false
     @State private var showGuide = false
     @State private var selectedItem: PhotosPickerItem?
@@ -118,12 +117,10 @@ struct MainView: View {
                     // 핑크 잠금 슬롯 — 좌상단
                     LockedSlot(size: 149, color: .brandPink)
                         .position(x: w * 0.242, y: h * 0.228 + 25)
-                        .onTapGesture { showComingSoon = true }
 
                     // 라임 잠금 슬롯 — 좌하단
                     LockedSlot(size: 105, color: .brandLime)
                         .position(x: w * 0.340, y: h * 0.843 + 25)
-                        .onTapGesture { showComingSoon = true }
                 }
 
                 // 딤 레이어 — 잠금 슬롯 위, 청록 원 아래 (Figma 55:1376)
@@ -179,11 +176,6 @@ struct MainView: View {
             .padding(.trailing, 35)
             .padding(.bottom, 40 - 25)
         }
-        .overlay {
-            if showComingSoon {
-                ComingSoonOverlay { showComingSoon = false }
-            }
-        }
         .fullScreenCover(isPresented: $showSettings) {
             SettingsView { showSettings = false }
         }
@@ -223,6 +215,7 @@ struct MainView: View {
 struct LockedSlot: View {
     let size: CGFloat
     let color: Color
+    @State private var isRevealed = false
 
     var body: some View {
         ZStack {
@@ -230,28 +223,27 @@ struct LockedSlot: View {
                 .strokeBorder(style: StrokeStyle(lineWidth: 2.5, dash: [6, 4]))
                 .foregroundStyle(color)
                 .frame(width: size, height: size)
-            Image(systemName: "lock.fill")
-                .font(.system(size: size * 0.2))
-                .foregroundStyle(color)
+                .background {
+                    if isRevealed {
+                        Circle().fill(Color(white: 0.45))
+                    }
+                }
+
+            if isRevealed {
+                Text("Coming\nSoon!")
+                    .font(.system(size: size * 0.135, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.white)
+            } else {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: size * 0.2))
+                    .foregroundStyle(color)
+            }
         }
-    }
-}
-
-struct ComingSoonOverlay: View {
-    let onDismiss: () -> Void
-
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.55)
-                .ignoresSafeArea()
-                .onTapGesture { onDismiss() }
-
-            Text("Coming Soon!")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color.white)
-                .padding(.horizontal, 28)
-                .padding(.vertical, 16)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .frame(width: size, height: size)
+        .contentShape(Circle())
+        .onTapGesture {
+            withAnimation(.easeOut(duration: 0.2)) { isRevealed.toggle() }
         }
     }
 }
@@ -259,11 +251,6 @@ struct ComingSoonOverlay: View {
 #Preview {
     MainView()
         .environment(AppRouter())
-}
-
-
-#Preview("Coming Soon") {
-    ComingSoonOverlay {}
 }
 
 #Preview("Locked Slot") {
