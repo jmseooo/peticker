@@ -309,7 +309,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Stickie/Preview Content\"";
-				DEVELOPMENT_TEAM = 2C7Y5A7W39;
+				DEVELOPMENT_TEAM = Y4J3ZHQ9H4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "반려동물 사진으로 위젯 스티커를 만들기 위해 사진 라이브러리에 접근합니다.";
@@ -506,7 +506,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Stickie/Preview Content\"";
-				DEVELOPMENT_TEAM = 2C7Y5A7W39;
+				DEVELOPMENT_TEAM = Y4J3ZHQ9H4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "반려동물 사진으로 위젯 스티커를 만들기 위해 사진 라이브러리에 접근합니다.";
