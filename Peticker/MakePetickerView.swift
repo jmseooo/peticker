@@ -51,7 +51,7 @@ extension SwatchColor {
     }
 }
 
-// 위젯 배경 — 단색 6종 + 패턴 이미지 8종
+// 위젯 배경 — 단색 6종 + 패턴 이미지 7종
 enum BackgroundStyle: String, CaseIterable, Identifiable {
     // 단색 (rawValue = hex)
     case plum   = "5B1445"
@@ -63,12 +63,11 @@ enum BackgroundStyle: String, CaseIterable, Identifiable {
     // 패턴 (rawValue = 이름)
     case dotsPlum     = "dots-plum"
     case dotsInk      = "dots-ink"
-    case stripeBrown  = "stripe-brown"
-    case stripeCream  = "stripe-cream"
+    case dotsOlive    = "dots-olive"
     case paws         = "paws"
     case heartsCorner = "hearts-corner"
-    case heartBig     = "heart-big"
-    case gridOlive    = "grid-olive"
+    case stripe       = "stripe"
+    case stars        = "stars"
 
     var id: String { rawValue }
 
@@ -77,12 +76,11 @@ enum BackgroundStyle: String, CaseIterable, Identifiable {
         switch self {
         case .dotsPlum:     return "BgDotsPlum"
         case .dotsInk:      return "BgDotsInk"
-        case .stripeBrown:  return "BgStripeBrown"
-        case .stripeCream:  return "BgStripeCream"
+        case .dotsOlive:    return "BgDotsOlive"
         case .paws:         return "BgPaws"
         case .heartsCorner: return "BgHeartsCorner"
-        case .heartBig:     return "BgHeartBig"
-        case .gridOlive:    return "BgGridOlive"
+        case .stripe:       return "BgStripe"
+        case .stars:        return "BgStars"
         default:            return nil
         }
     }
@@ -90,14 +88,13 @@ enum BackgroundStyle: String, CaseIterable, Identifiable {
     // 대표 바탕색 — 단색은 그 색, 패턴은 배경 바탕색(전경 대비 계산·폴백용)
     var baseHex: String {
         switch self {
-        case .dotsPlum:     return "5B1445"
-        case .dotsInk:      return "1A1A1A"
-        case .stripeBrown:  return "5A3D34"
-        case .stripeCream:  return "FFFFFF"
-        case .paws:         return "AEE0F5"
-        case .heartsCorner: return "F8D9EC"
-        case .heartBig:     return "F55CB8"
-        case .gridOlive:    return "7B8B0F"
+        case .dotsPlum:     return "3A052A"
+        case .dotsInk:      return "191919"
+        case .dotsOlive:    return "38392E"
+        case .paws:         return "F2FCFF"
+        case .heartsCorner: return "FFF4FC"
+        case .stripe:       return "E629AC"
+        case .stars:        return "CBF3F4"
         default:            return rawValue
         }
     }
