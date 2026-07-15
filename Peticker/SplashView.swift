@@ -10,13 +10,13 @@ private struct StickieLetter {
 }
 
 private let stickieLetters: [StickieLetter] = [
-    StickieLetter(char: "S", color: .brandPink,   x: 0.21, y: 0.19, size: 0.34, rotation: -6),
-    StickieLetter(char: "t", color: .brandYellow, x: 0.58, y: 0.09, size: 0.31, rotation: 12),
-    StickieLetter(char: "i", color: .brandCyan,   x: 0.74, y: 0.24, size: 0.31, rotation: -4),
-    StickieLetter(char: "c", color: .brandLime,   x: 0.49, y: 0.48, size: 0.31, rotation: 5),
-    StickieLetter(char: "k", color: .brandCyan,   x: 0.21, y: 0.68, size: 0.32, rotation: -10),
-    StickieLetter(char: "i", color: .brandYellow, x: 0.50, y: 0.90, size: 0.31, rotation: 8),
-    StickieLetter(char: "e", color: .brandPink,   x: 0.77, y: 0.81, size: 0.32, rotation: -5),
+    StickieLetter(char: "S", color: .brandPink,   x: 0.20, y: 0.20, size: 0.40, rotation: -6),
+    StickieLetter(char: "t", color: .brandYellow, x: 0.58, y: 0.10, size: 0.37, rotation: 12),
+    StickieLetter(char: "i", color: .brandCyan,   x: 0.73, y: 0.24, size: 0.37, rotation: -4),
+    StickieLetter(char: "c", color: .brandLime,   x: 0.49, y: 0.48, size: 0.37, rotation: 5),
+    StickieLetter(char: "k", color: .brandCyan,   x: 0.20, y: 0.68, size: 0.38, rotation: -10),
+    StickieLetter(char: "i", color: .brandYellow, x: 0.50, y: 0.90, size: 0.37, rotation: 8),
+    StickieLetter(char: "e", color: .brandPink,   x: 0.76, y: 0.81, size: 0.38, rotation: -5),
 ]
 
 struct SplashView: View {
@@ -47,9 +47,10 @@ struct SplashView: View {
                         .foregroundStyle(Color.black)
                         .frame(width: diameter, height: diameter)
                         .background(
+                            // 앱 아이콘과 동일하게 형광색 그대로, 아래에 자연스러운 드롭섀도우만
                             Circle()
                                 .fill(letter.color)
-                                .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 4)
+                                .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 8)
                         )
                         .rotationEffect(.degrees(letter.rotation + (isVisible ? 0 : 24)))
                         .scaleEffect(isVisible ? 1 : 0.2)
@@ -57,8 +58,8 @@ struct SplashView: View {
                         .position(x: geo.size.width * letter.x, y: geo.size.height * letter.y)
                 }
             }
-            .padding(.horizontal, 56)
-            .padding(.vertical, 40)
+            .padding(.horizontal, 28)
+            .padding(.vertical, 32)
             .opacity(showSmallLogo ? 0 : 1)
 
             VStack {
@@ -84,7 +85,7 @@ struct SplashView: View {
                 withAnimation(.spring(response: 0.42, dampingFraction: 0.55)) {
                     visibleLetterCount = i + 1
                 }
-                try? await Task.sleep(for: .milliseconds(110))
+                try? await Task.sleep(for: .milliseconds(210))
             }
             // 잠시 감상 후 이동
             try? await Task.sleep(for: .milliseconds(600))
