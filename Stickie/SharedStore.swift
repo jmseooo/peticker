@@ -8,10 +8,10 @@ import WidgetKit
 // - 위젯: 저장된 스티커를 (메모리 안전하게 다운샘플링해) 읽어 홈 화면에 표시
 enum SharedStore {
     // 앱·위젯 두 타겟의 Signing & Capabilities에 동일하게 등록된 App Group ID
-    static let appGroupID = "group.com.jinminseo.Peticker"
+    static let appGroupID = "group.com.jinminseo.Stickie"
 
     // StaticConfiguration의 kind — reloadTimelines 대상과 일치해야 함
-    static let widgetKind = "PetickerWidget"
+    static let widgetKind = "StickieWidget"
 
     private static let stickerFileName = "sticker.png"
 

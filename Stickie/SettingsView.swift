@@ -7,8 +7,7 @@ import UserNotifications
 struct SettingsView: View {
     let onClose: () -> Void
 
-    // TODO: 실제 문의용 이메일로 교체
-    private let supportEmail = "hello@peticker.app"
+    private let supportEmail = "jinminseo1001@gmail.com"
 
     @AppStorage("showBatteryPercent") private var showBatteryPercent = true
     @AppStorage("pushNotificationsEnabled") private var pushNotificationsEnabled = false
@@ -145,7 +144,7 @@ private struct MailComposeView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> MFMailComposeViewController {
         let vc = MFMailComposeViewController()
         vc.setToRecipients([recipient])
-        vc.setSubject("Peticker Feedback")
+        vc.setSubject("Stickie Feedback")
         vc.mailComposeDelegate = context.coordinator
         return vc
     }
@@ -175,9 +174,9 @@ private struct HowToUseView: View {
 
     private let steps: [(title: String, body: String)] = [
         ("1. Add a photo", "Tap the empty circle on the main screen and pick your pet's photo."),
-        ("2. Remove the background", "Peticker automatically cuts your pet out of the photo."),
+        ("2. Remove the background", "Stickie automatically cuts your pet out of the photo."),
         ("3. Customize", "Choose an outline color and background, then pinch, drag, or rotate to place it."),
-        ("4. Add to your Home Screen", "Tap DONE, then add the Peticker widget from your Home Screen or Lock Screen.")
+        ("4. Add to your Home Screen", "Tap DONE, then add the Stickie widget from your Home Screen or Lock Screen.")
     ]
 
     var body: some View {

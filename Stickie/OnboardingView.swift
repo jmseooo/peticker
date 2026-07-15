@@ -47,7 +47,7 @@ struct OnboardingView: View {
                 }
             } label: {
                 Text("Get Started")
-                    .font(.petickerButton)
+                    .font(.stickieButton)
                     .foregroundStyle(Color.black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)

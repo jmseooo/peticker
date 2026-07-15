@@ -188,7 +188,7 @@ struct MainView: View {
             SettingsView { showSettings = false }
         }
         .fullScreenCover(item: $pickedPhoto) { photo in
-            MakePetickerView(originalImage: photo.image, initialPlacement: photo.placement) {
+            MakeStickieView(originalImage: photo.image, initialPlacement: photo.placement) {
                 pickedPhoto = nil
                 selectedItem = nil
                 reloadWidgetPreview()   // 완성 결과(스티커·배경색·배치)를 원에 반영

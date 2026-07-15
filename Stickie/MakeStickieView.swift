@@ -355,7 +355,7 @@ enum ScreenSafeArea {
 }
 
 // 4단계 — 제작 화면: 누끼·스트로크 처리(Processing) → 완성 후 테두리 색 선택
-struct MakePetickerView: View {
+struct MakeStickieView: View {
     let onClose: () -> Void
 
     @State private var currentImage: UIImage         // 현재 처리 대상 원본(사진 변경 시 교체)
@@ -483,7 +483,7 @@ struct MakePetickerView: View {
     }
 
     private var titleLabel: some View {
-        Text("MAKE PETICKER")
+        Text("MAKE STICKIE")
             .font(.system(size: 16, weight: .bold))
             .foregroundStyle(.black)
             .padding(.horizontal, 12)
@@ -893,5 +893,5 @@ private func previewImage() -> UIImage {
 }
 
 #Preview("제작 화면") {
-    MakePetickerView(originalImage: previewImage()) {}
+    MakeStickieView(originalImage: previewImage()) {}
 }

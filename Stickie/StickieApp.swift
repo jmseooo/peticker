@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct PetickerApp: App {
+struct StickieApp: App {
     @State private var router = AppRouter()
 
     var body: some Scene {

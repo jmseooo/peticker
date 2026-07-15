@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2F47110B051A4EC08089BFAC"
-               BuildableName = "Peticker.app"
-               BlueprintName = "Peticker"
-               ReferencedContainer = "container:Peticker.xcodeproj">
+               BuildableName = "Stickie.app"
+               BlueprintName = "Stickie"
+               ReferencedContainer = "container:Stickie.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2F47110B051A4EC08089BFAC"
-            BuildableName = "Peticker.app"
-            BlueprintName = "Peticker"
-            ReferencedContainer = "container:Peticker.xcodeproj">
+            BuildableName = "Stickie.app"
+            BlueprintName = "Stickie"
+            ReferencedContainer = "container:Stickie.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2F47110B051A4EC08089BFAC"
-            BuildableName = "Peticker.app"
-            BlueprintName = "Peticker"
-            ReferencedContainer = "container:Peticker.xcodeproj">
+            BuildableName = "Stickie.app"
+            BlueprintName = "Stickie"
+            ReferencedContainer = "container:Stickie.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
