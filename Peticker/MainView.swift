@@ -52,6 +52,7 @@ struct WidgetCircle: View {
                 }
             }
             .clipShape(Circle())
+            .shadow(color: .black.opacity(0.2), radius: 8, x: 4, y: 4)
     }
 
     @ViewBuilder
@@ -75,7 +76,6 @@ struct WidgetCircle: View {
 
 struct MainView: View {
     @Environment(AppRouter.self) var router
-    @State private var showComingSoon = false
     @State private var showSettings = false
     @State private var showGuide = false
     @State private var selectedItem: PhotosPickerItem?
@@ -90,6 +90,7 @@ struct MainView: View {
     @State private var widgetForeground: Color = .black   // 그 위에 얹는 배터리 표시 색
     @AppStorage(SharedStore.showBatteryPercentKey, store: UserDefaults(suiteName: SharedStore.appGroupID))
     private var showBatteryPercent = true
+    @State private var showAddWidgetGuide = false   // 첫 스티커 완성 직후 "위젯 추가" 안내 팝업
 
     // 저장된 스티커와 배경을 함께 읽어 미리보기를 위젯과 같은 모습으로 맞춘다
     private func reloadWidgetPreview() {
@@ -123,12 +124,10 @@ struct MainView: View {
                     // 핑크 잠금 슬롯 — 좌상단
                     LockedSlot(size: 149, color: .brandPink)
                         .position(x: w * 0.242, y: h * 0.228 + 25)
-                        .onTapGesture { showComingSoon = true }
 
                     // 라임 잠금 슬롯 — 좌하단
-                    LockedSlot(size: 105, color: .brandLime)
+                    LockedSlot(size: 105, color: Color(hex: "A5DC0F"))
                         .position(x: w * 0.340, y: h * 0.843 + 25)
-                        .onTapGesture { showComingSoon = true }
                 }
 
                 // 딤 레이어 — 잠금 슬롯 위, 청록 원 아래 (Figma 55:1376)
@@ -186,8 +185,20 @@ struct MainView: View {
             .padding(.bottom, 40 - 25)
         }
         .overlay {
-            if showComingSoon {
-                ComingSoonOverlay { showComingSoon = false }
+            if showAddWidgetGuide {
+                ZStack {
+                    Color.black.opacity(0.6)
+                        .ignoresSafeArea()
+                    Image("AddWidgetGuide")
+                        .resizable()
+                        .scaledToFit()
+                        .padding(.horizontal, 24)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.25)) { showAddWidgetGuide = false }
+                }
+                .transition(.opacity)
             }
         }
         .fullScreenCover(isPresented: $showSettings) {
@@ -195,9 +206,13 @@ struct MainView: View {
         }
         .fullScreenCover(item: $pickedPhoto) { photo in
             MakePetickerView(originalImage: photo.image, initialPlacement: photo.placement) {
+                let isFirstSticker = savedSticker == nil   // 완성 전에 스티커가 없었으면 첫 제작
                 pickedPhoto = nil
                 selectedItem = nil
                 reloadWidgetPreview()   // 완성 결과(스티커·배경색·배치)를 원에 반영
+                if isFirstSticker {
+                    withAnimation(.easeInOut(duration: 0.25)) { showAddWidgetGuide = true }
+                }
             }
         }
         .onChange(of: selectedItem) { _, newItem in
@@ -229,6 +244,7 @@ struct MainView: View {
 struct LockedSlot: View {
     let size: CGFloat
     let color: Color
+    @State private var isRevealed = false
 
     var body: some View {
         ZStack {
@@ -236,28 +252,27 @@ struct LockedSlot: View {
                 .strokeBorder(style: StrokeStyle(lineWidth: 2.5, dash: [6, 4]))
                 .foregroundStyle(color)
                 .frame(width: size, height: size)
-            Image(systemName: "lock.fill")
-                .font(.system(size: size * 0.2))
-                .foregroundStyle(color)
+                .background {
+                    if isRevealed {
+                        Circle().fill(Color(white: 0.45))
+                    }
+                }
+
+            if isRevealed {
+                Text("Coming\nSoon!")
+                    .font(.system(size: size * 0.135, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(Color.white)
+            } else {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: size * 0.2))
+                    .foregroundStyle(color)
+            }
         }
-    }
-}
-
-struct ComingSoonOverlay: View {
-    let onDismiss: () -> Void
-
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.55)
-                .ignoresSafeArea()
-                .onTapGesture { onDismiss() }
-
-            Text("Coming Soon!")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(Color.white)
-                .padding(.horizontal, 28)
-                .padding(.vertical, 16)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .frame(width: size, height: size)
+        .contentShape(Circle())
+        .onTapGesture {
+            withAnimation(.easeOut(duration: 0.2)) { isRevealed.toggle() }
         }
     }
 }
@@ -267,15 +282,10 @@ struct ComingSoonOverlay: View {
         .environment(AppRouter())
 }
 
-
-#Preview("Coming Soon") {
-    ComingSoonOverlay {}
-}
-
 #Preview("Locked Slot") {
     HStack(spacing: 40) {
         LockedSlot(size: 149, color: .brandPink)
-        LockedSlot(size: 105, color: .brandLime)
+        LockedSlot(size: 105, color: Color(hex: "A5DC0F"))
     }
     .padding()
     .background(Color.bgBase)

@@ -3,6 +3,8 @@ import Photos
 
 struct OnboardingView: View {
     @Environment(AppRouter.self) var router
+    @State private var showHomeMockup = false
+    @State private var showLockMockup = false
 
     var body: some View {
         ZStack {
@@ -22,6 +24,8 @@ struct OnboardingView: View {
                         color: Color(hex: "C6F3FF")
                     ) {
                         HomeScreenMockup()
+                            .offset(y: showHomeMockup ? 0 : 18)
+                            .opacity(showHomeMockup ? 1 : 0)
                     }
                     .padding(.horizontal, 22)
 
@@ -30,11 +34,21 @@ struct OnboardingView: View {
                         color: Color(hex: "E1FF91")
                     ) {
                         LockScreenMockup()
+                            .offset(y: showLockMockup ? 0 : 18)
+                            .opacity(showLockMockup ? 1 : 0)
                     }
                     .padding(.horizontal, 22)
                     .padding(.top, 26)
                 }
                 .padding(.bottom, 8)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.5).delay(0.1)) {
+                showHomeMockup = true
+            }
+            withAnimation(.easeOut(duration: 0.5).delay(0.25)) {
+                showLockMockup = true
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
