@@ -10,7 +10,8 @@ struct SettingsView: View {
     // TODO: 실제 문의용 이메일로 교체
     private let supportEmail = "hello@peticker.app"
 
-    @AppStorage("showBatteryPercent") private var showBatteryPercent = true
+    @AppStorage(SharedStore.showBatteryPercentKey, store: UserDefaults(suiteName: SharedStore.appGroupID))
+    private var showBatteryPercent = true
     @AppStorage("pushNotificationsEnabled") private var pushNotificationsEnabled = false
     @State private var showHowToUse = false
     @State private var showMailComposer = false
