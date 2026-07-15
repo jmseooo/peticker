@@ -32,6 +32,9 @@ enum SharedStore {
     // 앱이 마지막으로 관찰한 배터리 퍼센트 — 위젯이 직접 못 읽을 때의 대비책
     private static let batteryPercentKey = "lastKnownBatteryPercent"
 
+    // 배터리 퍼센트 표시 on/off — 설정 화면의 Battery 토글이 여기 저장하고, 메인 뷰·위젯이 함께 읽는다.
+    static let showBatteryPercentKey = "showBatteryPercent"
+
     // 스티커 배치 변환 — 사용자가 핀치·드래그로 정한 크기·위치.
     // 지름(원/위젯 한 변) 대비 비율로 저장해 기기·위젯 크기가 달라도 같은 배치가 나온다.
     // [boxRatio, offsetXRatio, offsetYRatio]
@@ -152,6 +155,12 @@ enum SharedStore {
     static func lastKnownBatteryPercent() -> Int? {
         guard let defaults, defaults.object(forKey: batteryPercentKey) != nil else { return nil }
         return defaults.integer(forKey: batteryPercentKey)
+    }
+
+    /// 배터리 퍼센트를 표시할지 여부. 설정 화면에서 고른 적 없으면 기본 표시(true).
+    static func showBatteryPercent() -> Bool {
+        guard let defaults, defaults.object(forKey: showBatteryPercentKey) != nil else { return true }
+        return defaults.bool(forKey: showBatteryPercentKey)
     }
 
     /// 위젯·메인 화면 미리보기가 함께 쓰는 배경 정보.

@@ -17,6 +17,7 @@ struct StickerEntry: TimelineEntry {
     let backgroundPattern: String?   // 패턴 에셋 이름 (있으면 색 대신 이미지 배경)
     let foreground: Color    // 배경 위 배터리 표시 색 (어두운 배경에선 흰색)
     let batteryPercent: Int
+    let showBatteryPercent: Bool   // 설정 화면의 Battery 토글값
     let placement: WidgetPlacement?   // nil이면 예전 방식(자동 여백)으로 그린다
 
     static func current(imageData: Data?) -> StickerEntry {
@@ -35,6 +36,7 @@ struct StickerEntry: TimelineEntry {
             backgroundPattern: colors.pattern,
             foreground: colors.foreground,
             batteryPercent: percent,
+            showBatteryPercent: SharedStore.showBatteryPercent(),
             placement: placement
         )
     }
@@ -50,6 +52,7 @@ struct StickerProvider: TimelineProvider {
             backgroundPattern: nil,
             foreground: .black,
             batteryPercent: Battery.fallbackPercent,
+            showBatteryPercent: true,
             placement: nil
         )
     }
@@ -115,14 +118,16 @@ struct PetickerWidgetEntryView: View {
     private var homeScreen: some View {
         GeometryReader { geo in
             ZStack {
-                // 배터리 퍼센트 — 위젯 상단 (앱 미리보기와 동일한 구성)
-                VStack {
-                    Text("\(entry.batteryPercent)%")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(entry.foreground)
-                        // 위젯 크기에 비례한 상단 여백 (스티커 안전선 0.24h 위)
-                        .padding(.top, geo.size.height * 0.08)
-                    Spacer()
+                // 배터리 퍼센트 — 위젯 상단 (앱 미리보기와 동일한 구성). Battery 토글이 꺼져 있으면 숨긴다.
+                if entry.showBatteryPercent {
+                    VStack {
+                        Text("\(entry.batteryPercent)%")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(entry.foreground)
+                            // 위젯 크기에 비례한 상단 여백 (스티커 안전선 0.24h 위)
+                            .padding(.top, geo.size.height * 0.08)
+                        Spacer()
+                    }
                 }
 
                 if let data = entry.imageData, let image = UIImage(data: data) {
@@ -182,5 +187,5 @@ struct PetickerWidget: Widget {
 #Preview(as: .accessoryCircular) {
     PetickerWidget()
 } timeline: {
-    StickerEntry(date: Date(), imageData: nil, background: .white, backgroundPattern: nil, foreground: .black, batteryPercent: 100, placement: nil)
+    StickerEntry(date: Date(), imageData: nil, background: .white, backgroundPattern: nil, foreground: .black, batteryPercent: 100, showBatteryPercent: true, placement: nil)
 }

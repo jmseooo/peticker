@@ -12,6 +12,7 @@ struct WidgetCircle: View {
     let backgroundPattern: String?     // 패턴 에셋 이름 (있으면 색 대신 이미지)
     let foreground: Color
     let batteryPercent: Int
+    let showBatteryPercent: Bool
 
     var body: some View {
         Circle()
@@ -31,13 +32,15 @@ struct WidgetCircle: View {
                         // 스티커 — 사용자 배치가 있으면 그대로, 없으면 자동 배치. 원 밖은 잘린다.
                         stickerLayer(sticker)
 
-                        // 배터리 퍼센트 — 원 상단 근처 (스티커 위)
-                        VStack(spacing: 0) {
-                            Text("\(batteryPercent)%")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(foreground)
-                                .padding(.top, diameter * 0.117)   // 제작 화면과 동일 비율
-                            Spacer()
+                        // 배터리 퍼센트 — 원 상단 근처 (스티커 위). Battery 토글이 꺼져 있으면 숨긴다.
+                        if showBatteryPercent {
+                            VStack(spacing: 0) {
+                                Text("\(batteryPercent)%")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundStyle(foreground)
+                                    .padding(.top, diameter * 0.117)   // 제작 화면과 동일 비율
+                                Spacer()
+                            }
                         }
                     }
                     .frame(width: diameter, height: diameter)
@@ -85,6 +88,8 @@ struct MainView: View {
     @State private var widgetBackground: Color = .white   // 제작 화면에서 고른 위젯 배경색
     @State private var widgetPattern: String?             // 배경 패턴 에셋 (있으면 이미지)
     @State private var widgetForeground: Color = .black   // 그 위에 얹는 배터리 표시 색
+    @AppStorage(SharedStore.showBatteryPercentKey, store: UserDefaults(suiteName: SharedStore.appGroupID))
+    private var showBatteryPercent = true
 
     // 저장된 스티커와 배경을 함께 읽어 미리보기를 위젯과 같은 모습으로 맞춘다
     private func reloadWidgetPreview() {
@@ -142,7 +147,8 @@ struct MainView: View {
                     background: widgetBackground,
                     backgroundPattern: widgetPattern,
                     foreground: widgetForeground,
-                    batteryPercent: BatteryMonitor.shared.percent
+                    batteryPercent: BatteryMonitor.shared.percent,
+                    showBatteryPercent: showBatteryPercent
                 )
                 Group {
                     if let savedOriginal {

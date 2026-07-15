@@ -369,6 +369,8 @@ struct MakePetickerView: View {
     @State private var showPhotoPicker = false       // Change 버튼 → 사진 선택기
     @State private var pickerItem: PhotosPickerItem?
     @State private var saveErrorMessage: String?      // 저장 실패 시 사용자에게 보여줄 메시지
+    @AppStorage(SharedStore.showBatteryPercentKey, store: UserDefaults(suiteName: SharedStore.appGroupID))
+    private var showBatteryPercent = true
 
     // 스티커 배치 — 핀치(크기)·드래그(위치)·회전. 원 밖은 클리핑된다.
     @State private var placement: StickerPlacement?  // nil이면 아직 자동 배치 미확정
@@ -579,8 +581,8 @@ struct MakePetickerView: View {
                 withAnimation(.easeInOut(duration: 0.2)) { showChangeButton.toggle() }
             }
 
-            // 배터리 퍼센트 — 원 상단 근처 (변경 모드에선 숨김)
-            if !showChangeButton {
+            // 배터리 퍼센트 — 원 상단 근처 (변경 모드거나 Battery 토글이 꺼져 있으면 숨김)
+            if !showChangeButton && showBatteryPercent {
                 VStack(spacing: 0) {
                     Text("\(BatteryMonitor.shared.percent)%")
                         .font(.system(size: 15, weight: .bold))
