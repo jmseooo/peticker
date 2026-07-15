@@ -214,6 +214,11 @@ private struct HowToUseView: View {
                                 .foregroundStyle(.black.opacity(0.7))
                         }
                     }
+
+                    Image("HowToUseWidgetPreview")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity)
                 }
                 .padding(24)
             }
