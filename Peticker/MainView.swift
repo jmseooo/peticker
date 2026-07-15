@@ -58,6 +58,7 @@ struct WidgetCircle: View {
             let box = p.boxRatio * diameter
             image
                 .frame(width: box, height: box)
+                .rotationEffect(.degrees(p.rotation))
                 .offset(x: p.offset.width * diameter, y: p.offset.height * diameter)
         } else {
             // 예전 스티커(배치 정보 없음) — 자동 배치
@@ -72,6 +73,7 @@ struct WidgetCircle: View {
 struct MainView: View {
     @Environment(AppRouter.self) var router
     @State private var showComingSoon = false
+    @State private var showSettings = false
     @State private var showGuide = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var pickedPhoto: PickedPhoto?
@@ -111,16 +113,16 @@ struct MainView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 153, height: 24)
-                        .position(x: w / 2, y: 30)
+                        .position(x: w / 2, y: 30 + 25)
 
                     // 핑크 잠금 슬롯 — 좌상단
                     LockedSlot(size: 149, color: .brandPink)
-                        .position(x: w * 0.242, y: h * 0.228)
+                        .position(x: w * 0.242, y: h * 0.228 + 25)
                         .onTapGesture { showComingSoon = true }
 
                     // 라임 잠금 슬롯 — 좌하단
                     LockedSlot(size: 105, color: .brandLime)
-                        .position(x: w * 0.340, y: h * 0.843)
+                        .position(x: w * 0.340, y: h * 0.843 + 25)
                         .onTapGesture { showComingSoon = true }
                 }
 
@@ -154,7 +156,7 @@ struct MainView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .position(x: w * 0.540, y: h * 0.524)
+                .position(x: w * 0.540, y: h * 0.524 + 25)
 
                 // 가이드 텍스트·화살표 — 청록 원 위
                 if showGuide {
@@ -166,7 +168,7 @@ struct MainView: View {
         // 설정 아이콘 — 우하단 (오른쪽 35, 아래 40)
         .overlay(alignment: .bottomTrailing) {
             Button {
-                showComingSoon = true   // TODO: 설정 화면 연결
+                showSettings = true
             } label: {
                 Image("SettingsIcon")
                     .resizable()
@@ -175,12 +177,15 @@ struct MainView: View {
             }
             .buttonStyle(.plain)
             .padding(.trailing, 35)
-            .padding(.bottom, 40)
+            .padding(.bottom, 40 - 25)
         }
         .overlay {
             if showComingSoon {
                 ComingSoonOverlay { showComingSoon = false }
             }
+        }
+        .fullScreenCover(isPresented: $showSettings) {
+            SettingsView { showSettings = false }
         }
         .fullScreenCover(item: $pickedPhoto) { photo in
             MakePetickerView(originalImage: photo.image, initialPlacement: photo.placement) {

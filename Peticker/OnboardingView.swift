@@ -79,8 +79,8 @@ struct OnboardingView: View {
         }
         .padding(.horizontal, 24)
         .frame(height: 288)
-        .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 30))
+        .background(RoundedRectangle(cornerRadius: 30).fill(Color.white))
     }
 }
 

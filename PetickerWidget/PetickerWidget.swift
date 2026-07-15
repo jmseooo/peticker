@@ -1,11 +1,12 @@
 import WidgetKit
 import SwiftUI
 
-// 사용자가 수정 뷰에서 핀치·드래그로 정한 스티커 배치 (한 변 대비 비율)
+// 사용자가 수정 뷰에서 핀치·드래그·회전으로 정한 스티커 배치 (한 변 대비 비율)
 struct WidgetPlacement {
     let boxRatio: CGFloat
     let offsetX: CGFloat
     let offsetY: CGFloat
+    let rotation: Double
 }
 
 // 위젯 한 칸에 담기는 데이터 — 다운샘플링된 작은 스티커 PNG (Data는 Sendable) + 배경/전경색
@@ -25,7 +26,7 @@ struct StickerEntry: TimelineEntry {
             ?? SharedStore.lastKnownBatteryPercent()
             ?? Battery.fallbackPercent
         let placement = SharedStore.stickerTransform().map {
-            WidgetPlacement(boxRatio: $0.boxRatio, offsetX: $0.offsetX, offsetY: $0.offsetY)
+            WidgetPlacement(boxRatio: $0.boxRatio, offsetX: $0.offsetX, offsetY: $0.offsetY, rotation: $0.rotation)
         }
         return StickerEntry(
             date: Date(),
@@ -134,6 +135,7 @@ struct PetickerWidgetEntryView: View {
                             .resizable()
                             .scaledToFit()
                             .frame(width: box, height: box)
+                            .rotationEffect(.degrees(p.rotation))
                             .offset(x: p.offsetX * base, y: p.offsetY * base)
                     } else {
                         // 예전 스티커(배치 정보 없음) — 상단 배터리를 피하는 자동 여백
