@@ -11,7 +11,7 @@ struct SettingsView: View {
     private let supportEmail = "jinminseo1001@gmail.com"
 
     @AppStorage(SharedStore.showBatteryPercentKey, store: UserDefaults(suiteName: SharedStore.appGroupID))
-    private var showBatteryPercent = true
+    private var showBatteryPercent = false
     @AppStorage("pushNotificationsEnabled") private var pushNotificationsEnabled = false
     @State private var showHowToUse = false
     @State private var showMailComposer = false

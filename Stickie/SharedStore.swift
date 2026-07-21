@@ -157,9 +157,9 @@ enum SharedStore {
         return defaults.integer(forKey: batteryPercentKey)
     }
 
-    /// 배터리 퍼센트를 표시할지 여부. 설정 화면에서 고른 적 없으면 기본 표시(true).
+    /// 배터리 퍼센트를 표시할지 여부. 설정 화면에서 고른 적 없으면 기본 미표시(false).
     static func showBatteryPercent() -> Bool {
-        guard let defaults, defaults.object(forKey: showBatteryPercentKey) != nil else { return true }
+        guard let defaults, defaults.object(forKey: showBatteryPercentKey) != nil else { return false }
         return defaults.bool(forKey: showBatteryPercentKey)
     }
 
