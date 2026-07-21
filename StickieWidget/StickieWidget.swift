@@ -45,16 +45,10 @@ struct StickerEntry: TimelineEntry {
 // 공유 저장소에서 스티커를 (메모리 안전하게) 읽어 타임라인을 구성
 struct StickerProvider: TimelineProvider {
     func placeholder(in context: Context) -> StickerEntry {
-        StickerEntry(
-            date: Date(),
-            imageData: nil,
-            background: .white,
-            backgroundPattern: nil,
-            foreground: .black,
-            batteryPercent: Battery.fallbackPercent,
-            showBatteryPercent: true,
-            placement: nil
-        )
+        // 위젯 갤러리(추가 화면) 미리보기는 이 placeholder를 그린다.
+        // imageData를 nil로 두면 잠금화면 원형이 pawprint 아이콘으로 떨어지므로,
+        // 실제 저장된 스티커를 읽어 추가 전에도 실루엣 미리보기가 보이게 한다.
+        .current(imageData: SharedStore.widgetImageData())
     }
 
     func getSnapshot(in context: Context, completion: @escaping (StickerEntry) -> Void) {
