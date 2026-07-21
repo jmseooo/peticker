@@ -174,23 +174,35 @@ enum SharedStore {
 
     /// 위젯에서 사용 — 저장된 스티커를 ImageIO로 다운샘플링해 작은 PNG 데이터로 반환.
     /// 원본이 크더라도 전체 비트맵을 메모리에 올리지 않아 위젯 한도 안에서 안전하다.
-    static func widgetImageData(maxPixel: CGFloat = 600) -> Data? {
+    ///
+    /// 중요: 이 Data는 TimelineEntry에 담겨 직렬화된 뒤 위젯 데몬으로 전달된다.
+    /// PNG가 크면(디테일한 사진일수록 큼) 페이로드 한도를 넘겨 "배치된" 위젯이
+    /// 렌더에 실패해 회색으로 남는다(미리보기는 앱 프로세스라 영향 없음). 그래서
+    /// 목표 용량 이하가 될 때까지 해상도를 단계적으로 낮춰 페이로드를 항상 작게 유지한다.
+    static func widgetImageData(maxPixel: CGFloat = 360) -> Data? {
         // URL이 아니라 매번 파일 바이트를 새로 읽어 디코딩한다.
         // CGImageSourceCreateWithURL은 같은 경로의 갱신된 파일을 캐시된 옛 이미지로
         // 돌려줄 수 있어, 편집 후에도 위젯이 예전 스티커를 계속 보이는 원인이 된다.
         guard let url = stickerURL,
               let fileData = try? Data(contentsOf: url),
               let source = CGImageSourceCreateWithData(fileData as CFData, nil) else { return nil }
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceShouldCache: false,
-            kCGImageSourceThumbnailMaxPixelSize: maxPixel
-        ]
-        guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
-            return nil
+
+        let byteBudget = 320 * 1024   // 약 320KB — 위젯 타임라인 페이로드 안전선
+        let ladder: [CGFloat] = [maxPixel, 280, 220, 160]
+        var lastData: Data?
+        for pixel in ladder {
+            let options: [CFString: Any] = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceShouldCache: false,
+                kCGImageSourceThumbnailMaxPixelSize: pixel
+            ]
+            guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary),
+                  let data = UIImage(cgImage: cg).pngData() else { continue }
+            lastData = data
+            if data.count <= byteBudget { return data }   // 예산 안에 들면 그 해상도로 확정
         }
-        return UIImage(cgImage: cg).pngData()
+        return lastData   // 끝까지 못 맞추면 가장 작은 해상도 결과라도 반환
     }
 
     /// 저장된 스티커를 UIImage로 읽어 반환 (앱 메인 화면에서 사용). 없으면 nil.
