@@ -19,20 +19,14 @@ struct OnboardingView: View {
                         .padding(.top, 35)
                         .padding(.bottom, 16)
 
-                    onboardingCard(
-                        title: "Add widgets to your background.",
-                        color: Color(hex: "C6F3FF")
-                    ) {
+                    onboardingCard(color: Color(hex: "C6F3FF")) {
                         HomeScreenMockup()
                             .offset(y: showHomeMockup ? 0 : 18)
                             .opacity(showHomeMockup ? 1 : 0)
                     }
                     .padding(.horizontal, 22)
 
-                    onboardingCard(
-                        title: "Create widgets for your lock screen.",
-                        color: Color(hex: "E1FF91")
-                    ) {
+                    onboardingCard(color: Color(hex: "E1FF91")) {
                         LockScreenMockup()
                             .offset(y: showLockMockup ? 0 : 18)
                             .opacity(showLockMockup ? 1 : 0)
@@ -74,27 +68,17 @@ struct OnboardingView: View {
         }
     }
 
-    @ViewBuilder
+    // 카드 색 둥근 배경 위에 목업 이미지(비율 644x576)를 얹고 둥근 모서리로 클리핑.
     private func onboardingCard<M: View>(
-        title: String,
         color: Color,
         @ViewBuilder content: () -> M
     ) -> some View {
-        VStack(spacing: 0) {
-            Text(title)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.black)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, minHeight: 74)
-
-            content()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(color)
-        }
-        .padding(.horizontal, 24)
-        .frame(height: 288)
-        .clipShape(RoundedRectangle(cornerRadius: 30))
-        .background(RoundedRectangle(cornerRadius: 30).fill(Color.white))
+        let inner = content()
+        return RoundedRectangle(cornerRadius: 30)
+            .fill(color)
+            .aspectRatio(644.0 / 576.0, contentMode: .fit)
+            .overlay { inner }
+            .clipShape(RoundedRectangle(cornerRadius: 30))
     }
 }
 
@@ -108,7 +92,7 @@ private struct HomeScreenMockup: View {
 
 private struct LockScreenMockup: View {
     var body: some View {
-        Image("OnboardingLock")
+        Image("OnboardingLockCard")
             .resizable()
             .scaledToFit()
     }
