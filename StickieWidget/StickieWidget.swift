@@ -145,9 +145,9 @@ struct StickieWidgetEntryView: View {
                             .padding([.horizontal, .bottom], 6)
                     }
                 } else {
-                    // 아직 스티커를 만들지 않은 경우 — 로고 + 안내
+                    // 아직 스티커를 만들지 않은 경우 — 앱 아이콘 + 안내
                     VStack(spacing: 8) {
-                        Image("StickieLogo")
+                        Image("AppIcon")
                             .resizable()
                             .scaledToFit()
                             .frame(width: geo.size.width * 0.62)
