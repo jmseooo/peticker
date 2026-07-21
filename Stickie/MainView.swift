@@ -245,6 +245,7 @@ struct LockedSlot: View {
     let size: CGFloat
     let color: Color
     @State private var isRevealed = false
+    @State private var dismissTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -272,7 +273,13 @@ struct LockedSlot: View {
         .frame(width: size, height: size)
         .contentShape(Circle())
         .onTapGesture {
-            withAnimation(.easeOut(duration: 0.2)) { isRevealed.toggle() }
+            dismissTask?.cancel()
+            withAnimation(.easeOut(duration: 0.2)) { isRevealed = true }
+            dismissTask = Task {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.3)) { isRevealed = false }
+            }
         }
     }
 }
