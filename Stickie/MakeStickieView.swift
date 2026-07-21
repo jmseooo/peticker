@@ -53,12 +53,12 @@ extension SwatchColor {
 
 // 위젯 배경 — 단색 6종 + 패턴 이미지 8종
 enum BackgroundStyle: String, CaseIterable, Identifiable {
-    // 단색 (rawValue = hex)
+    // 단색 (rawValue = hex) — paper가 기본값이라 항상 첫 번째로 노출
+    case paper  = "F6F6F6"
     case plum   = "5B1445"
     case olive  = "7E8714"
     case sky    = "2AC8F2"
     case butter = "F8F396"
-    case paper  = "F6F6F6"
     case ink    = "343333"
     // 패턴 (rawValue = 이름)
     case dotsPlum     = "dots-plum"
@@ -140,9 +140,10 @@ struct BackgroundFill: View {
 
 // 스티커 테두리 색 팔레트. none은 테두리 없음.
 enum OutlineColor: String, SwatchColor {
+    // cyan이 기본값이라 항상 첫 번째로 노출
+    case cyan   = "3DD6F5"
     case pink   = "FF2DA0"
     case lime   = "CAFF39"
-    case cyan   = "3DD6F5"
     case yellow = "F5E63D"
     case white  = "FFFFFF"
     case black  = "000000"
