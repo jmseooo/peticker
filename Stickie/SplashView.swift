@@ -68,7 +68,7 @@ struct SplashView: View {
                     .font(.stickieTagline)
                     .foregroundStyle(Color.gray)
                     .opacity(showSmallLogo ? 1 : 0)
-                    .padding(.bottom, 2)
+                    .padding(.bottom, 12)
             }
         }
         .task {
