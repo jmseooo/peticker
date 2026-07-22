@@ -21,6 +21,7 @@
 		BB0001000000000000000011 /* MakeStickieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000011 /* MakeStickieView.swift */; };
 		BB0001000000000000000012 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000012 /* SharedStore.swift */; };
 		BB0001000000000000000013 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000013 /* SettingsView.swift */; };
+		BB0001000000000000000014 /* BatteryGuideOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000014 /* BatteryGuideOverlay.swift */; };
 		BB0002000000000000000001 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000012 /* SharedStore.swift */; };
 		BB0002000000000000000002 /* StickieWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000001 /* StickieWidgetBundle.swift */; };
 		BB0002000000000000000003 /* StickieWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0002000000000000000002 /* StickieWidget.swift */; };
@@ -72,6 +73,7 @@
 		AA0001000000000000000011 /* MakeStickieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakeStickieView.swift; sourceTree = "<group>"; };
 		AA0001000000000000000012 /* SharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStore.swift; sourceTree = "<group>"; };
 		AA0001000000000000000013 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA0001000000000000000014 /* BatteryGuideOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryGuideOverlay.swift; sourceTree = "<group>"; };
 		AA0002000000000000000001 /* StickieWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickieWidgetBundle.swift; sourceTree = "<group>"; };
 		AA0002000000000000000002 /* StickieWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickieWidget.swift; sourceTree = "<group>"; };
 		AA0002000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 				AA0001000000000000000011 /* MakeStickieView.swift */,
 				AA0001000000000000000012 /* SharedStore.swift */,
 				AA0001000000000000000013 /* SettingsView.swift */,
+				AA0001000000000000000014 /* BatteryGuideOverlay.swift */,
 				AA0002000000000000000005 /* Stickie.entitlements */,
 				957FCB1BE3ED4B00913C6D7A /* Assets.xcassets */,
 				301F284A657D475F94E96A56 /* Preview Content */,
@@ -276,6 +279,7 @@
 				BB0001000000000000000011 /* MakeStickieView.swift in Sources */,
 				BB0001000000000000000012 /* SharedStore.swift in Sources */,
 				BB0001000000000000000013 /* SettingsView.swift in Sources */,
+				BB0001000000000000000014 /* BatteryGuideOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
