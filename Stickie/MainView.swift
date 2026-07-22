@@ -203,9 +203,27 @@ struct MainView: View {
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    withAnimation(.easeInOut(duration: 0.25)) { showAddWidgetGuide = false }
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        showAddWidgetGuide = false
+                        let hasSeenKey = "hasSeenBatteryGuide"
+                        if !UserDefaults.standard.bool(forKey: hasSeenKey) {
+                            UserDefaults.standard.set(true, forKey: hasSeenKey)
+                            showBatteryGuide = true
+                        }
+                    }
                 }
                 .transition(.opacity)
+            }
+        }
+        // 배터리 가이드가 떠 있는 동안은 화면 어디를 탭해도 가이드만 닫히고 메인뷰가 드러난다.
+        .overlay {
+            if showBatteryGuide {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.easeOut(duration: 0.4)) { showBatteryGuide = false }
+                    }
             }
         }
         .fullScreenCover(isPresented: $showSettings) {
@@ -241,18 +259,6 @@ struct MainView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                 withAnimation(.easeOut(duration: 0.4)) {
                     showGuide = false
-                }
-                // 설치 후 처음 한 번만, 위젯 가이드가 사라진 뒤 배터리 설정 안내를 이어서 보여준다
-                let hasSeenKey = "hasSeenBatteryGuide"
-                guard !UserDefaults.standard.bool(forKey: hasSeenKey) else { return }
-                UserDefaults.standard.set(true, forKey: hasSeenKey)
-                withAnimation(.easeOut(duration: 0.4)) {
-                    showBatteryGuide = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    withAnimation(.easeOut(duration: 0.4)) {
-                        showBatteryGuide = false
-                    }
                 }
             }
         }
