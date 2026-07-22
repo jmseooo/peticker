@@ -9,13 +9,13 @@ private struct StickieLetter {
 }
 
 private let stickieLetters: [StickieLetter] = [
-    StickieLetter(assetName: "SplashS",      x: 0.22, y: 0.31, size: 0.40, rotation: -19.6),
-    StickieLetter(assetName: "SplashT",      x: 0.65, y: 0.18, size: 0.37, rotation: 12.7),
-    StickieLetter(assetName: "SplashICyan",  x: 0.83, y: 0.28, size: 0.50, rotation: 12.6),
-    StickieLetter(assetName: "SplashC",      x: 0.61, y: 0.49, size: 0.40, rotation: 21.4),
-    StickieLetter(assetName: "SplashK",      x: 0.26, y: 0.64, size: 0.34, rotation: 5.6),
-    StickieLetter(assetName: "SplashIYellow", x: 0.52, y: 0.87, size: 0.41, rotation: -22.7),
-    StickieLetter(assetName: "SplashE",      x: 0.81, y: 0.77, size: 0.35, rotation: 8.2),
+    StickieLetter(assetName: "SplashS",      x: 0.22, y: 0.298, size: 0.44, rotation: -19.6),
+    StickieLetter(assetName: "SplashT",      x: 0.65, y: 0.168, size: 0.41, rotation: 12.7),
+    StickieLetter(assetName: "SplashICyan",  x: 0.83, y: 0.268, size: 0.55, rotation: 12.6),
+    StickieLetter(assetName: "SplashC",      x: 0.61, y: 0.478, size: 0.44, rotation: 21.4),
+    StickieLetter(assetName: "SplashK",      x: 0.26, y: 0.628, size: 0.37, rotation: 5.6),
+    StickieLetter(assetName: "SplashIYellow", x: 0.52, y: 0.858, size: 0.45, rotation: -22.7),
+    StickieLetter(assetName: "SplashE",      x: 0.81, y: 0.758, size: 0.39, rotation: 8.2),
 ]
 
 struct SplashView: View {
