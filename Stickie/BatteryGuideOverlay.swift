@@ -5,7 +5,7 @@ import SwiftUI
 struct BatteryGuideOverlay: View {
     var body: some View {
         VStack(alignment: .trailing, spacing: 6) {
-            Text("설정에서 배터리 표시를\n켜거나 끌 수 있어요")
+            Text("You can turn on Battery\nPercentage in Settings.")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.trailing)
