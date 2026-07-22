@@ -88,6 +88,9 @@ struct StickieWidgetEntryView: View {
                 entry.background
             }
         }
+        // 위젯 갤러리(추가 화면) 미리보기가 회색 스켈레톤(redacted)으로 뜨지 않고
+        // 실제 로고·스티커를 그리도록 redaction을 끈다.
+        .unredacted()
     }
 
     // 잠금화면 원형 위젯. iOS는 잠금화면 위젯을 vibrant(단색 재질)로만 렌더한다.
@@ -145,9 +148,9 @@ struct StickieWidgetEntryView: View {
                             .padding([.horizontal, .bottom], 6)
                     }
                 } else {
-                    // 아직 스티커를 만들지 않은 경우 — 앱 아이콘 + 안내
+                    // 아직 스티커를 만들지 않은 경우 — Stickie 로고 + 안내
                     VStack(spacing: 8) {
-                        Image("AppIcon")
+                        Image("StickieBigLogo")
                             .resizable()
                             .scaledToFit()
                             .frame(width: geo.size.width * 0.62)
