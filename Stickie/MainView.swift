@@ -203,16 +203,28 @@ struct MainView: View {
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        showAddWidgetGuide = false
-                        let hasSeenKey = "hasSeenBatteryGuide"
-                        if !UserDefaults.standard.bool(forKey: hasSeenKey) {
-                            UserDefaults.standard.set(true, forKey: hasSeenKey)
-                            showBatteryGuide = true
-                        }
-                    }
+                    withAnimation(.easeInOut(duration: 0.25)) { showAddWidgetGuide = false }
                 }
                 .transition(.opacity)
+            }
+        }
+        // 최초 진입 딤(showGuide)을 탭하면 → 다음 딤(배터리 설정 안내)으로 이어진다.
+        // 설치 후 처음 한 번만 배터리 안내가 뜨고, 이후에는 딤만 닫힌다.
+        .overlay {
+            if showGuide {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showGuide = false
+                            let hasSeenKey = "hasSeenBatteryGuide"
+                            if !UserDefaults.standard.bool(forKey: hasSeenKey) {
+                                UserDefaults.standard.set(true, forKey: hasSeenKey)
+                                showBatteryGuide = true
+                            }
+                        }
+                    }
             }
         }
         // 배터리 가이드가 떠 있는 동안은 화면 어디를 탭해도 가이드만 닫히고 메인뷰가 드러난다.
@@ -255,12 +267,7 @@ struct MainView: View {
         }
         .onAppear {
             reloadWidgetPreview()   // 이전에 만든 스티커가 있으면 저장된 배경색과 함께 표시
-            showGuide = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                withAnimation(.easeOut(duration: 0.4)) {
-                    showGuide = false
-                }
-            }
+            showGuide = true        // 최초 진입 딤 — 탭하면 배터리 안내로 이어진다(아래 오버레이)
         }
     }
 }
