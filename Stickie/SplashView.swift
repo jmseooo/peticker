@@ -1,22 +1,21 @@
 import SwiftUI
 
 private struct StickieLetter {
-    let char: String
-    let color: Color
+    let assetName: String
     let x: CGFloat        // fraction of available width
     let y: CGFloat        // fraction of available height
-    let size: CGFloat     // circle diameter, fraction of available width
+    let size: CGFloat     // asset diameter, fraction of available width
     let rotation: Double
 }
 
 private let stickieLetters: [StickieLetter] = [
-    StickieLetter(char: "S", color: .brandPink,   x: 0.22, y: 0.31, size: 0.40, rotation: -19.6),
-    StickieLetter(char: "t", color: .brandYellow, x: 0.65, y: 0.18, size: 0.37, rotation: 12.7),
-    StickieLetter(char: "i", color: .brandCyan,   x: 0.83, y: 0.28, size: 0.50, rotation: 12.6),
-    StickieLetter(char: "c", color: .brandLime,   x: 0.61, y: 0.49, size: 0.40, rotation: 21.4),
-    StickieLetter(char: "k", color: .brandCyan,   x: 0.26, y: 0.64, size: 0.34, rotation: 5.6),
-    StickieLetter(char: "i", color: .brandYellow, x: 0.52, y: 0.87, size: 0.41, rotation: -22.7),
-    StickieLetter(char: "e", color: .brandPink,   x: 0.81, y: 0.77, size: 0.35, rotation: 8.2),
+    StickieLetter(assetName: "SplashS",      x: 0.22, y: 0.31, size: 0.40, rotation: -19.6),
+    StickieLetter(assetName: "SplashT",      x: 0.65, y: 0.18, size: 0.37, rotation: 12.7),
+    StickieLetter(assetName: "SplashICyan",  x: 0.83, y: 0.28, size: 0.50, rotation: 12.6),
+    StickieLetter(assetName: "SplashC",      x: 0.61, y: 0.49, size: 0.40, rotation: 21.4),
+    StickieLetter(assetName: "SplashK",      x: 0.26, y: 0.64, size: 0.34, rotation: 5.6),
+    StickieLetter(assetName: "SplashIYellow", x: 0.52, y: 0.87, size: 0.41, rotation: -22.7),
+    StickieLetter(assetName: "SplashE",      x: 0.81, y: 0.77, size: 0.35, rotation: 8.2),
 ]
 
 struct SplashView: View {
@@ -40,18 +39,13 @@ struct SplashView: View {
             GeometryReader { geo in
                 ForEach(Array(stickieLetters.enumerated()), id: \.offset) { index, letter in
                     let isVisible = index < visibleLetterCount
-                    let diameter = geo.size.width * letter.size + 7
+                    let diameter = geo.size.width * letter.size
 
-                    Text(letter.char)
-                        .font(.system(size: diameter * 0.52, weight: .bold))
-                        .foregroundStyle(Color.black)
+                    // Figma 익스포트 에셋 — 그림자가 이미지에 포함되어 있어 별도 배경/그림자가 필요 없다.
+                    Image(letter.assetName)
+                        .resizable()
+                        .scaledToFit()
                         .frame(width: diameter, height: diameter)
-                        .background(
-                            // 앱 아이콘과 동일하게 형광색 그대로, 아래에 자연스러운 드롭섀도우만
-                            Circle()
-                                .fill(letter.color)
-                                .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 8)
-                        )
                         .rotationEffect(.degrees(letter.rotation + (isVisible ? 0 : 24)))
                         .scaleEffect(isVisible ? 1 : 0.2)
                         .opacity(isVisible ? 1 : 0)
