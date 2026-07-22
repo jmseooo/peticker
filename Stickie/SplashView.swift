@@ -10,13 +10,13 @@ private struct StickieLetter {
 }
 
 private let stickieLetters: [StickieLetter] = [
-    StickieLetter(char: "S", color: .brandPink,   x: 0.20, y: 0.20, size: 0.40, rotation: -6),
-    StickieLetter(char: "t", color: .brandYellow, x: 0.58, y: 0.10, size: 0.37, rotation: 12),
-    StickieLetter(char: "i", color: .brandCyan,   x: 0.73, y: 0.24, size: 0.37, rotation: -4),
-    StickieLetter(char: "c", color: .brandLime,   x: 0.49, y: 0.48, size: 0.37, rotation: 5),
-    StickieLetter(char: "k", color: .brandCyan,   x: 0.20, y: 0.68, size: 0.38, rotation: -10),
-    StickieLetter(char: "i", color: .brandYellow, x: 0.50, y: 0.90, size: 0.37, rotation: 8),
-    StickieLetter(char: "e", color: .brandPink,   x: 0.76, y: 0.81, size: 0.38, rotation: -5),
+    StickieLetter(char: "S", color: .brandPink,   x: 0.22, y: 0.31, size: 0.40, rotation: -19.6),
+    StickieLetter(char: "t", color: .brandYellow, x: 0.65, y: 0.18, size: 0.37, rotation: 12.7),
+    StickieLetter(char: "i", color: .brandCyan,   x: 0.83, y: 0.28, size: 0.50, rotation: 12.6),
+    StickieLetter(char: "c", color: .brandLime,   x: 0.61, y: 0.49, size: 0.40, rotation: 21.4),
+    StickieLetter(char: "k", color: .brandCyan,   x: 0.26, y: 0.64, size: 0.34, rotation: 5.6),
+    StickieLetter(char: "i", color: .brandYellow, x: 0.52, y: 0.87, size: 0.41, rotation: -22.7),
+    StickieLetter(char: "e", color: .brandPink,   x: 0.81, y: 0.77, size: 0.35, rotation: 8.2),
 ]
 
 struct SplashView: View {
@@ -68,7 +68,7 @@ struct SplashView: View {
                     .font(.stickieTagline)
                     .foregroundStyle(Color.gray)
                     .opacity(showSmallLogo ? 1 : 0)
-                    .padding(.bottom, 2)
+                    .padding(.bottom, 12)
             }
         }
         .task {
