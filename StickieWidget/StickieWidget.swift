@@ -115,8 +115,8 @@ struct StickieWidgetEntryView: View {
     private var homeScreen: some View {
         GeometryReader { geo in
             ZStack {
-                // 배터리 퍼센트 — 위젯 상단 (앱 미리보기와 동일한 구성). Battery 토글이 꺼져 있으면 숨긴다.
-                if entry.showBatteryPercent {
+                // 배터리 퍼센트 — 위젯 상단. 스티커가 있을 때만(빈 상태에는 로고만) 표시.
+                if entry.showBatteryPercent, entry.imageData != nil {
                     VStack {
                         Text("\(entry.batteryPercent)%")
                             .font(.system(size: 13, weight: .bold))
@@ -148,19 +148,11 @@ struct StickieWidgetEntryView: View {
                             .padding([.horizontal, .bottom], 6)
                     }
                 } else {
-                    // 아직 스티커를 만들지 않은 경우 — Stickie 로고 + 안내
-                    VStack(spacing: 8) {
-                        Image("StickieBigLogo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: geo.size.width * 0.62)
-                        Text("앱에서 스티커를\n만들어 주세요")
-                            .font(.system(size: 11, weight: .semibold))
-                            .multilineTextAlignment(.center)
-                            // 배경색에 따라 흑백이 뒤집히도록 (로고는 원색 유지)
-                            .foregroundStyle(entry.foreground.opacity(0.7))
-                    }
-                    .padding(.top, geo.size.height * 0.12)
+                    // 아직 스티커를 만들지 않은 경우 — 로고만 중앙에 크게
+                    Image("StickieBigLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: geo.size.width * 0.9)
                 }
             }
             // GeometryReader는 자식을 좌상단에 두므로, 위젯 전체를 채워 중앙 정렬되게 함
