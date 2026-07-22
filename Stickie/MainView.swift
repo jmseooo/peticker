@@ -89,8 +89,9 @@ struct MainView: View {
     @State private var widgetPattern: String?             // 배경 패턴 에셋 (있으면 이미지)
     @State private var widgetForeground: Color = .black   // 그 위에 얹는 배터리 표시 색
     @AppStorage(SharedStore.showBatteryPercentKey, store: UserDefaults(suiteName: SharedStore.appGroupID))
-    private var showBatteryPercent = true
+    private var showBatteryPercent = false
     @State private var showAddWidgetGuide = false   // 첫 스티커 완성 직후 "위젯 추가" 안내 팝업
+    @State private var showBatteryGuide = false      // 설치 후 처음 한 번, "배터리 표시 설정" 안내
 
     // 저장된 스티커와 배경을 함께 읽어 미리보기를 위젯과 같은 모습으로 맞춘다
     private func reloadWidgetPreview() {
@@ -131,7 +132,7 @@ struct MainView: View {
                 }
 
                 // 딤 레이어 — 잠금 슬롯 위, 청록 원 아래 (Figma 55:1376)
-                if showGuide {
+                if showGuide || showBatteryGuide {
                     Color.black.opacity(0.6)
                         .ignoresSafeArea()
                         .transition(.opacity)
@@ -170,17 +171,23 @@ struct MainView: View {
                 }
             }
         }
-        // 설정 아이콘 — 우하단 (오른쪽 35, 아래 40)
+        // 설정 아이콘 — 우하단 (오른쪽 35, 아래 40). 배터리 가이드가 떠 있으면 아이콘 위에 나란히 쌓인다.
         .overlay(alignment: .bottomTrailing) {
-            Button {
-                showSettings = true
-            } label: {
-                Image("SettingsIcon")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 29, height: 29)
+            VStack(alignment: .trailing, spacing: 8) {
+                if showBatteryGuide {
+                    BatteryGuideOverlay()
+                        .transition(.opacity)
+                }
+                Button {
+                    showSettings = true
+                } label: {
+                    Image("SettingsIcon")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 29, height: 29)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
             .padding(.trailing, 35)
             .padding(.bottom, 40 - 25)
         }
@@ -196,9 +203,27 @@ struct MainView: View {
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    withAnimation(.easeInOut(duration: 0.25)) { showAddWidgetGuide = false }
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        showAddWidgetGuide = false
+                        let hasSeenKey = "hasSeenBatteryGuide"
+                        if !UserDefaults.standard.bool(forKey: hasSeenKey) {
+                            UserDefaults.standard.set(true, forKey: hasSeenKey)
+                            showBatteryGuide = true
+                        }
+                    }
                 }
                 .transition(.opacity)
+            }
+        }
+        // 배터리 가이드가 떠 있는 동안은 화면 어디를 탭해도 가이드만 닫히고 메인뷰가 드러난다.
+        .overlay {
+            if showBatteryGuide {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.easeOut(duration: 0.4)) { showBatteryGuide = false }
+                    }
             }
         }
         .fullScreenCover(isPresented: $showSettings) {
