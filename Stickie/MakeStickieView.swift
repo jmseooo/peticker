@@ -574,6 +574,7 @@ struct MakeStickieView: View {
             }
             .frame(width: d, height: d)
             .clipShape(Circle())
+            .shadow(color: .black.opacity(0.25), radius: 22, x: 8, y: 6)
             .contentShape(Circle())
             .gesture(manipulationGesture(diameter: d), isEnabled: sticker != nil && !showChangeButton)
             // 원을 탭하면 딤 + Change 버튼 (핀치·드래그와 구분되는 단일 탭)
